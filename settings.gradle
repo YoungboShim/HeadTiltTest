@@ -1,3 +1,0 @@
-include ':app'
-include ':usb-serial-for-android:usbSerialForAndroid'
-project(':usb-serial-for-android:usbSerialForAndroid').projectDir=new File('D:/workspace/usb-serial-for-android/usbSerialForAndroid')
