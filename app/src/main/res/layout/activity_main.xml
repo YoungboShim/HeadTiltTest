@@ -148,6 +148,17 @@
         app:layout_constraintTop_toBottomOf="@id/buttonAngleXPlus"
         app:layout_constraintStart_toEndOf="@id/buttonAngleYMinus" />
 
+    <TextView
+        android:id="@+id/textViewAnswer"
+        android:layout_width="120px"
+        android:layout_height="120px"
+        android:layout_marginEnd="8dp"
+        android:text="0"
+        android:textColor="@color/colorAccent"
+        android:textSize="30sp"
+        app:layout_constraintEnd_toStartOf="@+id/button"
+        tools:layout_editor_absoluteY="28dp" />
+
     <EditText
         android:id="@+id/editText"
         android:layout_width="wrap_content"
@@ -190,8 +201,6 @@
         android:text="Check"
         app:layout_constraintStart_toEndOf="@+id/buttonEnd"
         app:layout_constraintTop_toBottomOf="@+id/editText" />
-
-
 
 
 </android.support.constraint.ConstraintLayout>

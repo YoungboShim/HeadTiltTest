@@ -89,14 +89,12 @@ public class ImageView2 extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         for (int i = 0; i < menuNum; i++) {
-            for (int j = 0; j < menuNum; j++) {
-                if (i == selectedX && j == selectedY)
-                    canvas.drawRect(menuRect[i][j], selectedMenuPaint);
-                else
-                    canvas.drawRect(menuRect[i][j], menuPaint);
-            }
+            if (i == selectedX)
+                canvas.drawRect(menuRect[i][0], selectedMenuPaint);
+            else
+                canvas.drawRect(menuRect[i][0], menuPaint);
         }
-        canvas.drawCircle(centerPoint.x + (int)(angleX  / maxAngleX * (menuWidth / 2)), centerPoint.y  + (int)(angleY / maxAngleY * (menuHeight / 2)), 5, cursorPaint);
+        //canvas.drawCircle(centerPoint.x + (int)(angleX  / maxAngleX * (menuWidth / 2)), centerPoint.y  + (int)(angleY / maxAngleY * (menuHeight / 2)), 5, cursorPaint);
         invalidate();
         super.onDraw(canvas);
     }
@@ -104,10 +102,8 @@ public class ImageView2 extends View {
     public void setMenuNum(int num) {
         menuNum = num;
         for (int i = 0; i < menuNum; i++) {
-            for (int j = 0; j < menuNum; j++) {
-                menuRect[i][j] = new Rect(centerPoint.x - menuWidth / 2 + menuWidth / menuNum  * i, centerPoint.y - menuHeight / 2 + menuHeight / menuNum * j,
-                        centerPoint.x  - menuWidth / 2 + menuWidth / menuNum  * (i  + 1), centerPoint.y - menuHeight / 2 + menuHeight / menuNum  * (j  + 1));
-            }
+            menuRect[i][0] = new Rect(centerPoint.x - menuWidth / 2 + menuWidth / menuNum  * i, centerPoint.y - menuHeight / 2,
+                    centerPoint.x  - menuWidth / 2 + menuWidth / menuNum  * (i  + 1), centerPoint.y + menuHeight / 2);
         }
     }
 

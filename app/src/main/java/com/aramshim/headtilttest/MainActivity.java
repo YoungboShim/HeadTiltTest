@@ -11,6 +11,7 @@ import android.hardware.usb.UsbManager;
 import android.media.AudioManager;
 import android.media.SoundPool;
 import android.os.Build;
+import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.Editable;
@@ -29,6 +30,8 @@ import com.hoho.android.usbserial.util.SerialInputOutputManager;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -37,7 +40,7 @@ public class MainActivity extends AppCompatActivity {
 
     private final String TAG = MainActivity.class.getSimpleName();
     ImageView2 imageview2;
-    TextView mText1, mText2, mText3;
+    TextView mText1, mText2, mText3, mTextAnswer;
     TextView mMenuNum, mMaxAngleX, mMaxAngleY;
     Button mButton, btnStart, btnEnd, btnCheck;
     Button btnMaxXPlus, btnMaxXMinus, btnMaxYPlus, btnMaxYMinus,  btnMenuNumPlus, btnMenuNumMinus;
@@ -58,8 +61,8 @@ public class MainActivity extends AppCompatActivity {
 
     Point centerPoint = new Point(screenWidth / 2, screenHeight / 2 - 50);
 
-    int menuWidth = 550;
-    int menuHeight = 550;
+    int menuWidth = screenWidth;
+    int menuHeight = 200;
     int menuNum = 1;
 
     int selectedX = 0;
@@ -67,6 +70,10 @@ public class MainActivity extends AppCompatActivity {
 
     SoundPool sound = new SoundPool(1, AudioManager.STREAM_MUSIC,0);
     int soundId;
+
+    private boolean taskOn = false;
+    private Timer dwellTimer;
+    private TimerTask confirmTask;
 
     private SerialInputOutputManager mSerialIoManager;
 
@@ -104,14 +111,22 @@ public class MainActivity extends AppCompatActivity {
             headPitch = Double.parseDouble(strData.split(",")[1]);
             double yaw = getYaw(headYaw - initYaw);
             double pitch = getPitch(headPitch - initPitch);
-            imageview2.setAngleX(yaw);
-            imageview2.setAngleY(pitch);
-            int tempX = (int)((yaw + maxAngleX) / (maxAngleX * 2f / menuNum));
-            if (tempX >= menuNum)  tempX = menuNum - 1;
-            int tempY = (int)((pitch + maxAngleY) / (maxAngleY * 2f / menuNum));
-            if (tempY >= menuNum)  tempY = menuNum - 1;
-            checkMenuChanged(tempX, tempY);
-            imageview2.setSelectedPosition(tempX, tempY);
+
+            if(taskOn) {
+                imageview2.setAngleX(yaw);
+                imageview2.setAngleY(pitch);
+                int tempX = (int) ((yaw + maxAngleX) / (maxAngleX * 2f / menuNum));
+                if (tempX >= menuNum) tempX = menuNum - 1;
+                int tempY = (int) ((pitch + maxAngleY) / (maxAngleY * 2f / menuNum));
+                if (tempY >= menuNum) tempY = menuNum - 1;
+                tempY = 0;
+                if(checkMenuChanged(tempX, tempY)){
+                    confirmTask.cancel();
+                    createTimerTask();
+                    dwellTimer.schedule(confirmTask, 2000);
+                }
+                imageview2.setSelectedPosition(tempX, tempY);
+            }
 
             mText3.setText("Rotation: " + String.valueOf(yaw));
         }
@@ -164,14 +179,19 @@ public class MainActivity extends AppCompatActivity {
         return angleY;
     }
 
-    private void checkMenuChanged(int x, int y)
+    private boolean checkMenuChanged(int x, int y)
     {
         if (x != selectedX || y != selectedY)
         {
             int streamId = sound.play(soundId, 1.0F, 1.0F,  1,  0,  1.0F);
+            selectedX = x;
+            selectedY = y;
+            return true;
         }
-        selectedX = x;
-        selectedY = y;
+        else
+        {
+            return false;
+        }
     }
 
 
@@ -200,6 +220,7 @@ public class MainActivity extends AppCompatActivity {
         mText1 = (TextView) findViewById(R.id.textView);
         mText2 = (TextView) findViewById(R.id.textView2);
         mText3 = (TextView) findViewById(R.id.textView3);
+        mTextAnswer = (TextView) findViewById(R.id.textViewAnswer);
         mText1.setVisibility(View.INVISIBLE);
         mText2.setVisibility(View.INVISIBLE);
         mText3.setVisibility(View.INVISIBLE);
@@ -222,8 +243,12 @@ public class MainActivity extends AppCompatActivity {
         mButton.setOnClickListener(new Button.OnClickListener() {
             @Override
             public void onClick(View v) {
+                taskOn = true;
                 initYaw = headYaw;
                 initPitch = headPitch;
+                confirmTask.cancel();
+                createTimerTask();
+                dwellTimer.schedule(confirmTask, 2000);
             }
         });
 
@@ -349,6 +374,9 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         onDeviceStateChange();
+
+        createTimerTask();
+        dwellTimer = new Timer();
     }
 
     @Override
@@ -406,5 +434,20 @@ public class MainActivity extends AppCompatActivity {
     private void onDeviceStateChange() {
         stopIoManager();
         startIoManager();
+    }
+
+    private void createTimerTask(){
+        confirmTask = new TimerTask() {
+            @Override
+            public void run() {
+                runOnUiThread(new TimerTask() {
+                    @Override
+                    public void run() {
+                        taskOn = false;
+                        mTextAnswer.setText(Integer.toString(selectedX));
+                    }
+                });
+            }
+        };
     }
 }
