@@ -244,6 +244,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 taskOn = true;
+                imageview2.modeChange(true);
                 initYaw = headYaw;
                 initPitch = headPitch;
                 confirmTask.cancel();
@@ -445,6 +446,7 @@ public class MainActivity extends AppCompatActivity {
                     public void run() {
                         taskOn = false;
                         mTextAnswer.setText(Integer.toString(selectedX));
+                        imageview2.modeChange(false);
                     }
                 });
             }

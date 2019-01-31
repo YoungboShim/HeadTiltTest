@@ -25,6 +25,7 @@ public class ImageView2 extends View {
     private Rect[][] menuRect;
     private Paint menuPaint;
     private Paint selectedMenuPaint;
+    private Paint confirmedMenuPaint;
 
     private Point centerPoint;
     private int menuWidth;
@@ -38,6 +39,7 @@ public class ImageView2 extends View {
 
     private int selectedX;
     private int selectedY;
+    private boolean taskMode = false;
 
     public ImageView2(Context paramContext, AttributeSet paramAttributeSet) {
         super(paramContext, paramAttributeSet);
@@ -73,6 +75,10 @@ public class ImageView2 extends View {
         selectedMenuPaint.setStyle(Paint.Style.FILL_AND_STROKE);
         selectedMenuPaint.setColor(Color.BLUE);
 
+        confirmedMenuPaint = new Paint();
+        confirmedMenuPaint.setStrokeWidth(2);
+        confirmedMenuPaint.setStyle(Paint.Style.FILL_AND_STROKE);
+        confirmedMenuPaint.setColor(Color.RED);
     }
 
     public ImageView2(Context paramContext, AttributeSet paramAttributeSet,
@@ -89,8 +95,12 @@ public class ImageView2 extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         for (int i = 0; i < menuNum; i++) {
-            if (i == selectedX)
-                canvas.drawRect(menuRect[i][0], selectedMenuPaint);
+            if (i == selectedX) {
+                if(taskMode)
+                    canvas.drawRect(menuRect[i][0], selectedMenuPaint);
+                else
+                    canvas.drawRect(menuRect[i][0], confirmedMenuPaint);
+            }
             else
                 canvas.drawRect(menuRect[i][0], menuPaint);
         }
@@ -164,4 +174,7 @@ public class ImageView2 extends View {
         selectedY = y;
     }
 
+    public void modeChange(boolean mode){
+        taskMode = mode;
+    }
 }
