@@ -181,8 +181,8 @@
         android:id="@+id/buttonStart"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="28dp"
-        android:layout_marginTop="188dp"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="384dp"
         android:text="Start"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/editText" />
@@ -192,8 +192,8 @@
         android:id="@+id/buttonEnd"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="12dp"
-        android:layout_marginTop="188dp"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="384dp"
         android:text="End"
         app:layout_constraintStart_toEndOf="@+id/buttonStart"
         app:layout_constraintTop_toBottomOf="@+id/editText" />
@@ -202,8 +202,8 @@
         android:id="@+id/buttonCheck"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="12dp"
-        android:layout_marginTop="188dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="384dp"
         android:text="Check"
         app:layout_constraintStart_toEndOf="@+id/buttonEnd"
         app:layout_constraintTop_toBottomOf="@+id/editText" />

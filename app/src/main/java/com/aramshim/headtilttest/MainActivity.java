@@ -126,6 +126,12 @@ public class MainActivity extends AppCompatActivity {
                     dwellTimer.schedule(confirmTask, 2000);
                 }
                 imageview2.setSelectedPosition(tempX, tempY);
+
+                try {
+                    dLogger.write(strData);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
 
             mText3.setText("Rotation: " + String.valueOf(yaw));
@@ -136,11 +142,6 @@ public class MainActivity extends AppCompatActivity {
             //double rotation = headYaw - chestYaw - initAngle;
             //imageview2.setAngle(rotation);
             //mText3.setText("Rotation: " + String.valueOf(rotation));
-        }
-        try {
-            dLogger.write(strData);
-        } catch (IOException e) {
-            e.printStackTrace();
         }
     }
 
@@ -254,7 +255,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         btnStart = (Button) findViewById(R.id.buttonStart);
-        btnStart.setVisibility(View.INVISIBLE);
+        //btnStart.setVisibility(View.INVISIBLE);
         btnStart.setOnClickListener(new Button.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -266,7 +267,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         btnEnd = (Button) findViewById(R.id.buttonEnd);
-        btnEnd.setVisibility(View.INVISIBLE);
+        //btnEnd.setVisibility(View.INVISIBLE);
         btnEnd.setOnClickListener(new Button.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -383,7 +384,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume(){
         super.onResume();
-
     }
 
     private void stopIoManager() {
