@@ -70,4 +70,9 @@ public class DataLogger {
         }
         return false;
     }
+
+    public long getCurrentTime(){
+        long tmpTime = System.currentTimeMillis() - taskStartTime;
+        return tmpTime;
+    }
 }

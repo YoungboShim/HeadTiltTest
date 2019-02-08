@@ -74,6 +74,9 @@ public class MainActivity extends AppCompatActivity {
     private boolean taskOn = false;
     private Timer dwellTimer;
     private TimerTask confirmTask;
+    private boolean dwellMode = false;
+
+    private GestureClassifier gestureClassifier;
 
     private SerialInputOutputManager mSerialIoManager;
 
@@ -120,10 +123,20 @@ public class MainActivity extends AppCompatActivity {
                 int tempY = (int) ((pitch + maxAngleY) / (maxAngleY * 2f / menuNum));
                 if (tempY >= menuNum) tempY = menuNum - 1;
                 tempY = 0;
-                if(checkMenuChanged(tempX, tempY)){
+                if(dwellMode && checkMenuChanged(tempX, tempY)){
                     confirmTask.cancel();
                     createTimerTask();
                     dwellTimer.schedule(confirmTask, 2000);
+                }
+                if(!dwellMode)
+                {
+                    mTextAnswer.setText(strData);
+                    if(gestureClassifier.updateData(headYaw, headPitch))
+                    {
+                        taskOn = false;
+                        mTextAnswer.setText(Integer.toString(selectedX));
+                        imageview2.modeChange(false);
+                    }
                 }
                 imageview2.setSelectedPosition(tempX, tempY);
 
@@ -248,9 +261,11 @@ public class MainActivity extends AppCompatActivity {
                 imageview2.modeChange(true);
                 initYaw = headYaw;
                 initPitch = headPitch;
-                confirmTask.cancel();
-                createTimerTask();
-                dwellTimer.schedule(confirmTask, 2000);
+                if(dwellMode) {
+                    confirmTask.cancel();
+                    createTimerTask();
+                    dwellTimer.schedule(confirmTask, 2000);
+                }
             }
         });
 
@@ -377,8 +392,17 @@ public class MainActivity extends AppCompatActivity {
         });
         onDeviceStateChange();
 
-        createTimerTask();
-        dwellTimer = new Timer();
+        if(dwellMode) {
+            createTimerTask();
+            dwellTimer = new Timer();
+        }
+        else{
+            try {
+                gestureClassifier = new GestureClassifier(this);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     @Override
