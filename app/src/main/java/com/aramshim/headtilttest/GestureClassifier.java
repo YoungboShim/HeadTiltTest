@@ -19,11 +19,13 @@ public class GestureClassifier {
         taskStartTime = System.currentTimeMillis();
     }
 
-    public boolean updateData(double newRoll, double newYaw){
+    public boolean updateData(double newRoll, double newYaw, boolean targetChanged){
         long currTime = System.currentTimeMillis() - taskStartTime;
         time[idxEnd] = currTime;
         roll[idxEnd] = newRoll;
         yaw[idxEnd] = newYaw;
+        if(targetChanged)
+            idxStart = idxEnd;
         if(++idxEnd >= 50)
             idxEnd = 0;
 
@@ -60,12 +62,12 @@ public class GestureClassifier {
         int minYawIdx = idxTmp;
         while(idxTmp != iEnd)
         {
-            if(++idxTmp >= 50)
-                idxTmp = 0;
             if(minYaw > yaw[idxTmp]) {
                 minYaw = yaw[idxTmp];
                 minYawIdx = idxTmp;
             }
+            if(++idxTmp >= 50)
+                idxTmp = 0;
         }
         return minYawIdx;
     }
@@ -76,12 +78,12 @@ public class GestureClassifier {
         int maxYawIdx = idxTmp;
         while(idxTmp != iEnd)
         {
-            if(++idxTmp >= 50)
-                idxTmp = 0;
             if(maxYaw < yaw[idxTmp]) {
                 maxYaw = yaw[idxTmp];
                 maxYawIdx = idxTmp;
             }
+            if(++idxTmp >= 50)
+                idxTmp = 0;
         }
         return maxYawIdx;
     }
@@ -92,12 +94,12 @@ public class GestureClassifier {
         int minRollIdx = idxTmp;
         while(idxTmp != iEnd)
         {
-            if(++idxTmp >= 50)
-                idxTmp = 0;
             if(minRoll > yaw[idxTmp]) {
                 minRoll = yaw[idxTmp];
                 minRollIdx = idxTmp;
             }
+            if(++idxTmp >= 50)
+                idxTmp = 0;
         }
         return minRollIdx;
     }
@@ -108,12 +110,12 @@ public class GestureClassifier {
         int maxRollIdx = idxTmp;
         while(idxTmp != iEnd)
         {
-            if(++idxTmp >= 50)
-                idxTmp = 0;
             if(maxRoll < yaw[idxTmp]) {
                 maxRoll = yaw[idxTmp];
                 maxRollIdx = idxTmp;
             }
+            if(++idxTmp >= 50)
+                idxTmp = 0;
         }
         return maxRollIdx;
     }

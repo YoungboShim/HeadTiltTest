@@ -114,16 +114,22 @@ public class MainActivity extends AppCompatActivity {
             headPitch = Double.parseDouble(strData.split(",")[1]);
             double yaw = getYaw(headYaw - initYaw);
             double pitch = getPitch(headPitch - initPitch);
+            boolean menuChanged = false;
 
             if(taskOn) {
                 imageview2.setAngleX(yaw);
                 imageview2.setAngleY(pitch);
                 int tempX = (int) ((yaw + maxAngleX) / (maxAngleX * 2f / menuNum));
-                if (tempX >= menuNum) tempX = menuNum - 1;
+                if (tempX >= menuNum){
+                    tempX = menuNum - 1;
+                }
                 int tempY = (int) ((pitch + maxAngleY) / (maxAngleY * 2f / menuNum));
-                if (tempY >= menuNum) tempY = menuNum - 1;
+                if (tempY >= menuNum){
+                    tempY = menuNum - 1;
+                }
                 tempY = 0;
-                if(dwellMode && checkMenuChanged(tempX, tempY)){
+                menuChanged = checkMenuChanged(tempX, tempY);
+                if(dwellMode && menuChanged){
                     confirmTask.cancel();
                     createTimerTask();
                     dwellTimer.schedule(confirmTask, 2000);
@@ -131,7 +137,7 @@ public class MainActivity extends AppCompatActivity {
                 if(!dwellMode)
                 {
                     mTextAnswer.setText(strData);
-                    if(gestureClassifier.updateData(headYaw, headPitch))
+                    if(gestureClassifier.updateData(headYaw, headPitch, menuChanged))
                     {
                         taskOn = false;
                         mTextAnswer.setText(Integer.toString(selectedX));
