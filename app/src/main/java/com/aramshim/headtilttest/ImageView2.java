@@ -9,7 +9,6 @@ import android.graphics.Point;
 import android.graphics.Rect;
 import android.util.AttributeSet;
 import android.view.View;
-import android.widget.Button;
 
 public class ImageView2 extends View {
 
@@ -24,8 +23,9 @@ public class ImageView2 extends View {
 
     private Rect[][] menuRect;
     private Paint menuPaint;
-    private Paint selectedMenuPaint;
+    private Paint selectedMenuPaint, selectedMenuPaint2;
     private Paint confirmedMenuPaint;
+    private Paint targetMenuPaint;
 
     private Point centerPoint;
     private int menuWidth;
@@ -39,7 +39,9 @@ public class ImageView2 extends View {
 
     private int selectedX;
     private int selectedY;
-    private boolean taskMode = false;
+    private boolean onTrial = false;
+
+    private int target;
 
     public ImageView2(Context paramContext, AttributeSet paramAttributeSet) {
         super(paramContext, paramAttributeSet);
@@ -63,7 +65,7 @@ public class ImageView2 extends View {
         centerPaint.setStyle(Paint.Style.FILL_AND_STROKE);
         centerPaint.setColor(Color.YELLOW);
 
-        menuRect = new Rect[10][10];
+        menuRect = new Rect[20][20];
 
         menuPaint = new Paint();
         menuPaint.setStrokeWidth(2);
@@ -75,10 +77,20 @@ public class ImageView2 extends View {
         selectedMenuPaint.setStyle(Paint.Style.FILL_AND_STROKE);
         selectedMenuPaint.setColor(Color.BLUE);
 
+        selectedMenuPaint2 = new Paint();
+        selectedMenuPaint2.setStrokeWidth(2);
+        selectedMenuPaint2.setStyle(Paint.Style.FILL_AND_STROKE);
+        selectedMenuPaint2.setColor(Color.GREEN);
+
         confirmedMenuPaint = new Paint();
         confirmedMenuPaint.setStrokeWidth(2);
         confirmedMenuPaint.setStyle(Paint.Style.FILL_AND_STROKE);
         confirmedMenuPaint.setColor(Color.RED);
+
+        targetMenuPaint = new Paint();
+        targetMenuPaint.setStrokeWidth(2);
+        targetMenuPaint.setStyle(Paint.Style.FILL_AND_STROKE);
+        targetMenuPaint.setColor(Color.RED);
     }
 
     public ImageView2(Context paramContext, AttributeSet paramAttributeSet,
@@ -96,13 +108,16 @@ public class ImageView2 extends View {
     protected void onDraw(Canvas canvas) {
         for (int i = 0; i < menuNum; i++) {
             if (i == selectedX) {
-                if(taskMode)
-                    canvas.drawRect(menuRect[i][0], selectedMenuPaint);
+                if(i == target)
+                    canvas.drawRect(menuRect[i][0], selectedMenuPaint2);
                 else
-                    canvas.drawRect(menuRect[i][0], confirmedMenuPaint);
+                    canvas.drawRect(menuRect[i][0], selectedMenuPaint);
             }
             else
-                canvas.drawRect(menuRect[i][0], menuPaint);
+                if (i == target)
+                    canvas.drawRect(menuRect[i][0], targetMenuPaint);
+                else
+                    canvas.drawRect(menuRect[i][0], menuPaint);
         }
         //canvas.drawCircle(centerPoint.x + (int)(angleX  / maxAngleX * (menuWidth / 2)), centerPoint.y  + (int)(angleY / maxAngleY * (menuHeight / 2)), 5, cursorPaint);
         invalidate();
@@ -174,7 +189,11 @@ public class ImageView2 extends View {
         selectedY = y;
     }
 
-    public void modeChange(boolean mode){
-        taskMode = mode;
+    public void setOnTrial(boolean mode){
+        onTrial = mode;
+    }
+
+    public void setTarget(int target) {
+        this.target  = target;
     }
 }

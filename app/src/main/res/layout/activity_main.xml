@@ -18,153 +18,138 @@
         app:layout_constraintTop_toTopOf="parent"
         tools:layout_editor_absoluteX="0dp" />
 
-    <TextView
-        android:id="@+id/textView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="32dp"
-        android:layout_marginTop="212dp"
-        android:text="TextView"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <TextView
-        android:id="@+id/textView2"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="32dp"
-        android:layout_marginTop="288dp"
-        android:text="TextView"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <TextView
-        android:id="@+id/textView3"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="32dp"
-        android:layout_marginTop="360dp"
-        android:text="TextView"
+    <Button
+        android:id="@+id/buttonMode"
+        android:layout_width="200px"
+        android:layout_height="80px"
+        android:layout_marginStart="1050px"
+        android:layout_marginTop="500px"
+        android:text="NOD"
+        android:textSize="30px"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <Button
-        android:id="@+id/button"
-        android:layout_width="150dp"
-        android:layout_height="80dp"
-        android:layout_marginStart="88dp"
-        android:layout_marginTop="36dp"
-        android:text="Init"
-        android:textSize="24sp"
+        android:id="@+id/buttonCondition"
+        android:layout_width="200px"
+        android:layout_height="80px"
+        android:layout_marginStart="1050px"
+        android:layout_marginTop="600px"
+        android:text="SEAT"
+        android:textSize="30px"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
-
-    <Button
-        android:id="@+id/buttonMenuNumPlus"
-        android:layout_width="70px"
-        android:layout_height="70px"
-        android:layout_marginStart="4dp"
-        android:layout_marginTop="16dp"
-        android:text="+"
-        app:layout_constraintStart_toStartOf="@id/button"
-        app:layout_constraintTop_toBottomOf="@id/button" />
-
-    <Button
-        android:id="@+id/buttonMenuNumMinus"
-        android:layout_width="70px"
-        android:layout_height="70px"
-        android:layout_marginStart="12dp"
-        android:layout_marginTop="16dp"
-        android:text="-"
-        app:layout_constraintStart_toEndOf="@id/buttonMenuNumPlus"
-        app:layout_constraintTop_toBottomOf="@id/button" />
-
-    <TextView
-        android:id="@+id/textViewMenuNum"
-        android:layout_width="120px"
-        android:layout_height="120px"
-        android:layout_marginStart="20dp"
-        android:layout_marginTop="28dp"
-        android:text="1"
-        android:textColor="@color/colorAccent"
-        android:textSize="30sp"
-        app:layout_constraintStart_toEndOf="@+id/buttonMenuNumMinus"
-        app:layout_constraintTop_toBottomOf="@+id/textViewAnswer" />
 
     <Button
         android:id="@+id/buttonAngleXPlus"
-        android:layout_width="70px"
-        android:layout_height="70px"
-        android:layout_marginStart="236dp"
-        android:layout_marginTop="44dp"
+        android:layout_width="60px"
+        android:layout_height="60px"
+        android:layout_marginStart="1050px"
+        android:layout_marginTop="10px"
         android:text="+"
-        app:layout_constraintStart_toEndOf="@+id/button"
-        app:layout_constraintTop_toTopOf="@+id/graphicView" />
+        android:textSize="20px"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <Button
         android:id="@+id/buttonAngleXMinus"
-        android:layout_width="70px"
-        android:layout_height="70px"
-        android:layout_marginStart="4dp"
-        android:layout_marginTop="44dp"
+        android:layout_width="60px"
+        android:layout_height="60px"
+        android:layout_marginStart="10px"
+        android:layout_marginTop="10px"
         android:text="-"
+        android:textSize="20px"
         app:layout_constraintStart_toEndOf="@id/buttonAngleXPlus"
-        app:layout_constraintTop_toTopOf="@+id/graphicView" />
+        app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
-        android:id="@+id/maxAngleX"
-        android:layout_width="120px"
-        android:layout_height="120px"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="44dp"
+        android:id="@+id/textViewMaxAngleX"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="10px"
+        android:layout_marginTop="10px"
         android:text="90"
         android:textColor="@color/colorAccent"
-        android:textSize="30sp"
+        android:textSize="40px"
         app:layout_constraintStart_toEndOf="@id/buttonAngleXMinus"
-        app:layout_constraintTop_toTopOf="@+id/graphicView" />
+        app:layout_constraintTop_toTopOf="parent" />
 
     <Button
         android:id="@+id/buttonAngleYPlus"
-        android:layout_width="70px"
-        android:layout_height="70px"
-        android:layout_marginTop="8dp"
+        android:layout_width="60px"
+        android:layout_height="60px"
+        android:layout_marginTop="10px"
         android:text="+"
+        android:textSize="20px"
         app:layout_constraintStart_toStartOf="@id/buttonAngleXPlus"
         app:layout_constraintTop_toBottomOf="@id/buttonAngleXPlus" />
 
     <Button
         android:id="@+id/buttonAngleYMinus"
-        android:layout_width="70px"
-        android:layout_height="70px"
-        android:layout_marginStart="4dp"
-        android:layout_marginTop="8dp"
+        android:layout_width="60px"
+        android:layout_height="60px"
+        android:layout_marginStart="10px"
+        android:layout_marginTop="10px"
         android:text="-"
+        android:textSize="20px"
         app:layout_constraintStart_toEndOf="@id/buttonAngleYPlus"
         app:layout_constraintTop_toBottomOf="@id/buttonAngleXPlus" />
 
     <TextView
-        android:id="@+id/maxAngleY"
-        android:layout_width="120px"
-        android:layout_height="120px"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="8dp"
+        android:id="@+id/textViewMaxAngleY"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="10px"
+        android:layout_marginTop="10px"
         android:text="90"
         android:textColor="@color/colorAccent"
-        android:textSize="30sp"
+        android:textSize="40px"
         app:layout_constraintStart_toEndOf="@id/buttonAngleYMinus"
         app:layout_constraintTop_toBottomOf="@id/buttonAngleXPlus" />
 
+    <Button
+        android:id="@+id/buttonMenuNumPlus"
+        android:layout_width="60px"
+        android:layout_height="60px"
+        android:layout_marginTop="10px"
+        android:text="+"
+        android:textSize="20px"
+        app:layout_constraintStart_toStartOf="@id/buttonAngleXPlus"
+        app:layout_constraintTop_toBottomOf="@id/buttonAngleYPlus" />
+
+    <Button
+        android:id="@+id/buttonMenuNumMinus"
+        android:layout_width="60px"
+        android:layout_height="60px"
+        android:layout_marginStart="10px"
+        android:layout_marginTop="10px"
+        android:text="-"
+        android:textSize="20px"
+        app:layout_constraintStart_toEndOf="@id/buttonMenuNumPlus"
+        app:layout_constraintTop_toBottomOf="@id/buttonAngleYPlus" />
+
     <TextView
-        android:id="@+id/textViewAnswer"
-        android:layout_width="120px"
-        android:layout_height="42dp"
-        android:layout_marginStart="20dp"
-        android:layout_marginTop="40dp"
-        android:text="0"
+        android:id="@+id/textViewMenuNum"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="10px"
+        android:layout_marginTop="10px"
+        android:text="1"
         android:textColor="@color/colorAccent"
-        android:textSize="14sp"
-        app:layout_constraintStart_toEndOf="@+id/button"
-        app:layout_constraintTop_toTopOf="@+id/graphicView" />
+        android:textSize="40px"
+        app:layout_constraintStart_toEndOf="@id/buttonMenuNumMinus"
+        app:layout_constraintTop_toBottomOf="@id/buttonAngleYPlus" />
+
+    <TextView
+        android:id="@+id/textViewTarget"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="500px"
+        android:layout_marginTop="50px"
+        android:textColor="@color/colorAccent"
+        android:textSize="50px"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <EditText
         android:id="@+id/editText"
@@ -177,36 +162,61 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <Button
-        android:id="@+id/buttonStart"
+
+    <TextView
+        android:id="@+id/textViewQuestion"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="24dp"
-        android:layout_marginTop="384dp"
-        android:text="Start"
+        android:layout_marginStart="50px"
+        android:layout_marginTop="500px"
+        android:text="Question : "
+        android:textColor="@color/colorAccent"
+        android:textSize="50px"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/editText" />
+        app:layout_constraintTop_toTopOf="parent" />
 
-
-    <Button
-        android:id="@+id/buttonEnd"
+    <TextView
+        android:id="@+id/textViewBTCheck"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="20dp"
-        android:layout_marginTop="384dp"
-        android:text="End"
-        app:layout_constraintStart_toEndOf="@+id/buttonStart"
-        app:layout_constraintTop_toBottomOf="@+id/editText" />
+        android:layout_marginStart="50px"
+        android:layout_marginTop="500px"
+        android:text="BT"
+        android:textColor="@color/colorAccent"
+        android:textSize="50px"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
-    <Button
-        android:id="@+id/buttonCheck"
+    <TextView
+        android:id="@+id/textViewSensorCheck"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="384dp"
-        android:text="Check"
-        app:layout_constraintStart_toEndOf="@+id/buttonEnd"
-        app:layout_constraintTop_toBottomOf="@+id/editText" />
+        android:layout_marginStart="50px"
+        android:layout_marginTop="600px"
+        android:text="Sensor"
+        android:textColor="@color/colorAccent"
+        android:textSize="50px"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/buttonBT"
+        android:layout_width="150px"
+        android:layout_height="80px"
+        android:layout_marginStart="30px"
+        android:layout_marginTop="30px"
+        android:text="BT"
+        android:textSize="20px"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Question : "
+        tools:layout_editor_absoluteX="1264dp"
+        tools:layout_editor_absoluteY="277dp" />
 
 
 </android.support.constraint.ConstraintLayout>
