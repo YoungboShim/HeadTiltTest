@@ -8,29 +8,30 @@ import java.util.Queue;
 
 public class GestureClassifier {
     private final String TAG = GestureClassifier.class.getSimpleName();
-    private long[] time = new long[50];
-    private double[] roll = new double[50];
-    private double[] yaw = new double[50];
+    private int binSize = 100;
+    private long[] time = new long[binSize];
+    private double[] roll = new double[binSize];
+    private double[] yaw = new double[binSize];
     private int idxStart = 0, idxEnd = 0;
     private double widthThres = 5, heightThres = 10;
     private long taskStartTime;
 
     GestureClassifier(Context context) throws IOException{
-        taskStartTime = System.currentTimeMillis();
+        //taskStartTime = System.currentTimeMillis();
     }
 
-    public boolean updateData(double newRoll, double newYaw, boolean targetChanged){
-        long currTime = System.currentTimeMillis() - taskStartTime;
+    public boolean updateData(double newRoll, double newYaw, boolean targetChanged, long timeSend){
+        long currTime = timeSend;
         time[idxEnd] = currTime;
         roll[idxEnd] = newRoll;
         yaw[idxEnd] = newYaw;
         if(targetChanged)
             idxStart = idxEnd;
-        if(++idxEnd >= 50)
+        if(++idxEnd >= binSize)
             idxEnd = 0;
 
         while(time[idxStart] < currTime - 1000){
-            if(++idxStart >= 50)
+            if(++idxStart >= binSize)
                 idxStart = 0;
         }
 
@@ -41,17 +42,20 @@ public class GestureClassifier {
         int minYawIdx = getMinYaw(idxStart, idxEnd);
         int maxYawIdxPrev = getMaxYaw(idxStart, minYawIdx);
         int maxYawIdxAfter = getMaxYaw(minYawIdx, idxEnd);
-        int minRollIdx = getMinRoll(idxStart, idxEnd);
-        int maxRollIdx = getMaxRoll(idxStart, idxEnd);
+        //int minRollIdx = getMinRoll(idxStart, idxEnd);
+        //int maxRollIdx = getMaxRoll(idxStart, idxEnd);
 
         double heightPrev = yaw[maxYawIdxPrev] - yaw[minYawIdx];
         double heightAfter = yaw[maxYawIdxAfter] - yaw[minYawIdx];
-        double width = roll[maxRollIdx] - roll[minRollIdx];
+        //double width = roll[maxRollIdx] - roll[minRollIdx];
 
-        Log.d(TAG, "detect: " + String.valueOf(heightAfter) + ", " + String.valueOf(heightPrev) + ", " + String.valueOf(width));
+        Log.d(TAG, "detect: " + String.valueOf(time[idxStart]) + ", " + String.valueOf(idxStart) + ", " + String.valueOf(idxEnd) + ", " + String.valueOf(maxYawIdxPrev) + ", " + String.valueOf(minYawIdx) + ", " + String.valueOf(maxYawIdxAfter));
+        Log.d(TAG, "detect: " + String.valueOf(heightPrev) + ", " + String.valueOf(heightAfter));
 
-        if(heightPrev > heightThres && heightAfter > heightThres && width < widthThres)
+        if(heightPrev > heightThres && heightAfter > heightThres) {// && width < widthThres)
+            Log.d(TAG, "detect: DETECT!!");
             return true;
+        }
         else
             return false;
     }
@@ -66,7 +70,7 @@ public class GestureClassifier {
                 minYaw = yaw[idxTmp];
                 minYawIdx = idxTmp;
             }
-            if(++idxTmp >= 50)
+            if(++idxTmp >= binSize)
                 idxTmp = 0;
         }
         return minYawIdx;
@@ -82,7 +86,7 @@ public class GestureClassifier {
                 maxYaw = yaw[idxTmp];
                 maxYawIdx = idxTmp;
             }
-            if(++idxTmp >= 50)
+            if(++idxTmp >= binSize)
                 idxTmp = 0;
         }
         return maxYawIdx;
@@ -98,7 +102,7 @@ public class GestureClassifier {
                 minRoll = yaw[idxTmp];
                 minRollIdx = idxTmp;
             }
-            if(++idxTmp >= 50)
+            if(++idxTmp >= binSize)
                 idxTmp = 0;
         }
         return minRollIdx;
@@ -114,7 +118,7 @@ public class GestureClassifier {
                 maxRoll = yaw[idxTmp];
                 maxRollIdx = idxTmp;
             }
-            if(++idxTmp >= 50)
+            if(++idxTmp >= binSize)
                 idxTmp = 0;
         }
         return maxRollIdx;

@@ -144,7 +144,7 @@ public class MainActivity extends AppCompatActivity {
                 }
                 if(!dwellMode)
                 {
-                    if(gestureClassifier.updateData(headYaw, headPitch, menuChanged))
+                    if(gestureClassifier.updateData(headYaw, headPitch, menuChanged, System.currentTimeMillis()))
                     {
                         trialDone();
                     }

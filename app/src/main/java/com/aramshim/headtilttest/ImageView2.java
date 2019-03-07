@@ -119,7 +119,7 @@ public class ImageView2 extends View {
                 else
                     canvas.drawRect(menuRect[i][0], menuPaint);
         }
-        //canvas.drawCircle(centerPoint.x + (int)(angleX  / maxAngleX * (menuWidth / 2)), centerPoint.y  + (int)(angleY / maxAngleY * (menuHeight / 2)), 5, cursorPaint);
+        canvas.drawCircle(centerPoint.x + (int)(angleX  / maxAngleX * (menuWidth / 2)), centerPoint.y  + (int)(angleY / maxAngleY * (menuHeight / 2)), 5, cursorPaint);
         invalidate();
         super.onDraw(canvas);
     }
