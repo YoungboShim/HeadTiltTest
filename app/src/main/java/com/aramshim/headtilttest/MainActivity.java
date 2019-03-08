@@ -69,6 +69,8 @@ public class MainActivity extends AppCompatActivity {
     SoundPool sound = new SoundPool(1, AudioManager.STREAM_MUSIC,0);
     int soundId;
     int target;
+    Point fittsTarget;
+
 
     int numBlock = 3;
     int numRepeat = 2;
@@ -78,12 +80,14 @@ public class MainActivity extends AppCompatActivity {
     int numTrial = 0;
     boolean onBlock = false;
 
+    ArrayList<Point> fittsTargets= new ArrayList<Point>();;
 
     private boolean taskOn = false;
     private Timer dwellTimer;
     private TimerTask confirmTask;
     private boolean dwellMode = false;
     private boolean seatMode = true;
+    private boolean fittsMode = true;
 
     private GestureClassifier gestureClassifier;
 
@@ -122,7 +126,7 @@ public class MainActivity extends AppCompatActivity {
             double yaw = getYaw(headYaw - initYaw);
             double pitch = getPitch(headPitch - initPitch);
             boolean menuChanged = false;
-
+            boolean isOnTarget = false;
             if(taskOn) {
                 imageview2.setAngleX(yaw);
                 imageview2.setAngleY(pitch);
@@ -136,15 +140,16 @@ public class MainActivity extends AppCompatActivity {
                 }
                 tempY = 0;
                 menuChanged = checkMenuChanged(tempX, tempY);
-
-                if(dwellMode && menuChanged){
+                isOnTarget = checkOnTarget(centerPoint.x + (int) (yaw  / maxAngleX * (menuWidth / 2)));
+                imageview2.setIsonTarget(isOnTarget);
+                if(dwellMode && !isOnTarget){
                     confirmTask.cancel();
                     createTimerTask();
                     dwellTimer.schedule(confirmTask, 2000);
                 }
                 if(!dwellMode)
                 {
-                    if(gestureClassifier.updateData(headYaw, headPitch, menuChanged, System.currentTimeMillis()))
+                    if(gestureClassifier.updateData(headYaw, headPitch, !isOnTarget, System.currentTimeMillis()))
                     {
                         trialDone();
                     }
@@ -157,7 +162,7 @@ public class MainActivity extends AppCompatActivity {
     public void trialDone() {
         taskOn = false;
         mTextTarget.setVisibility(View.VISIBLE);
-        mTextTarget.setText("Target : " + Integer.toString(target) + "\nSelected : " + Integer.toString(selectedX));
+        //mTextTarget.setText("Target : " + Integer.toString(target) + "\nSelected : " + Integer.toString(selectedX));
         mQuestion.setVisibility(View.VISIBLE);
         imageview2.setOnTrial(false);
     }
@@ -201,45 +206,83 @@ public class MainActivity extends AppCompatActivity {
                 }
                 else if (strData.trim().split(" ")[0].equals("c"))
                 {
-                    if (onBlock)
-                    {
-                        taskOn = true;
-                        imageview2.setOnTrial(true);
-                        initYaw = headYaw;
-                        initPitch = headPitch;
-                        mQuestion.setText("Question : ");
-                        mQuestion.setVisibility(View.INVISIBLE);
-                        Point tempTarget = targets.remove(new Random().nextInt(targets.size()));
-                        target = tempTarget.x;
-                        menuNum = tempTarget.y + 1;
-                        imageview2.setMenuNum(tempTarget.y + 1);
-                        //target = new Random().nextInt(menuNum);
-                        mTextTarget.setVisibility(View.INVISIBLE);
-                        imageview2.setTarget(target);
-                        if(dwellMode) {
-                            confirmTask.cancel();
-                            createTimerTask();
-                            dwellTimer.schedule(confirmTask, 2000);
+                    if (fittsMode) {
+                        if (onBlock) {
+                            taskOn = true;
+                            imageview2.setOnTrial(true);
+                            initYaw = headYaw;
+                            initPitch = headPitch;
+                            mQuestion.setText("Question : ");
+                            mQuestion.setVisibility(View.INVISIBLE);
+                            mTextTarget.setVisibility(View.INVISIBLE);
+                            fittsTarget = fittsTargets.remove(new Random().nextInt(fittsTargets.size()));
+                            Log.d("target",fittsTarget.x + "");
+                            imageview2.setFittsTarget(fittsTarget);
+                            if (dwellMode) {
+                                confirmTask.cancel();
+                                createTimerTask();
+                                dwellTimer.schedule(confirmTask, 2000);
+                            }
+                            mSensorCheck.setText(cnt + " / " + numTrial);
+                            cnt++;
+                        } else {
+                            onBlock = true;
+                            fittsTargets.add(new Point(100, 25));
+                            fittsTargets.add(new Point(150, 50));
+                            fittsTargets.add(new Point(200, 75));
+                            fittsTargets.add(new Point(300, 25));
+                            fittsTargets.add(new Point(350, 50));
+                            fittsTargets.add(new Point(400, 75));
+                            fittsTargets.add(new Point(450, 25));
+                            fittsTargets.add(new Point(500, 50));
+                            fittsTargets.add(new Point(550, 75));
+                            numTrial = fittsTargets.size();
+                            mSensorCheck.setText(cnt + " / " + numTrial);
+                            cnt++;
+                            mBTCheck.setVisibility(View.INVISIBLE);
+                            //mSensorCheck.setVisibility(View.INVISIBLE);
                         }
-                        mSensorCheck.setText(cnt + " / " + numTrial);
-                        cnt++;
-                    }
-                    else
-                    {
-                        onBlock = true;
-                        targets = new ArrayList<Point>();
-                        for (int num: numTargets) {
-                            for (int i = 0; i < num; i++) {
-                                for (int j = 0; j < numRepeat; j++) {
-                                    targets.add(new Point(i, num-1));
-                                    numTrial++;
+                    } else {
+                        if (onBlock)
+                        {
+                            taskOn = true;
+                            imageview2.setOnTrial(true);
+                            initYaw = headYaw;
+                            initPitch = headPitch;
+                            mQuestion.setText("Question : ");
+                            mQuestion.setVisibility(View.INVISIBLE);
+                            Point tempTarget = targets.remove(new Random().nextInt(targets.size()));
+                            target = tempTarget.x;
+                            menuNum = tempTarget.y + 1;
+                            imageview2.setMenuNum(tempTarget.y + 1);
+                            target = new Random().nextInt(menuNum);
+                            mTextTarget.setVisibility(View.INVISIBLE);
+                            imageview2.setTarget(target);
+                            if(dwellMode) {
+                                confirmTask.cancel();
+                                createTimerTask();
+                                dwellTimer.schedule(confirmTask, 2000);
+                            }
+                            mSensorCheck.setText(cnt + " / " + numTrial);
+                            cnt++;
+                        }
+                        else
+                        {
+                            onBlock = true;
+                            targets = new ArrayList<Point>();
+                            for (int num: numTargets) {
+                                for (int i = 0; i < num; i++) {
+                                    for (int j = 0; j < numRepeat; j++) {
+                                        targets.add(new Point(i, num-1));
+                                        numTrial++;
+                                    }
                                 }
                             }
+                            mSensorCheck.setText(cnt + " / " + numTrial);
+                            cnt++;
+                            mBTCheck.setVisibility(View.INVISIBLE);
+                            //mSensorCheck.setVisibility(View.INVISIBLE);
                         }
-                        mSensorCheck.setText(cnt + " / " + numTrial);
-                        cnt++;
-                        mBTCheck.setVisibility(View.INVISIBLE);
-                        //mSensorCheck.setVisibility(View.INVISIBLE);
                     }
                 }
             }
@@ -479,6 +522,16 @@ public class MainActivity extends AppCompatActivity {
         }
         else
         {
+            return false;
+        }
+    }
+
+    private boolean checkOnTarget(int x)
+    {
+        if (fittsTarget.x - fittsTarget.y /2 <= x && x <= fittsTarget.x + fittsTarget.y / 2)
+        {
+            return true;
+        } else {
             return false;
         }
     }

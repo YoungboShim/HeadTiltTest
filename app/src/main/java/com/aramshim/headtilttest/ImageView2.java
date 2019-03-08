@@ -27,6 +27,12 @@ public class ImageView2 extends View {
     private Paint confirmedMenuPaint;
     private Paint targetMenuPaint;
 
+    private Rect fittsTargetRect;
+    private Paint fittsTargetPaint;
+
+    private Rect fittsCursorRect;
+    private Paint fittsCursorPaint;
+
     private Point centerPoint;
     private int menuWidth;
     private int menuHeight;
@@ -42,6 +48,10 @@ public class ImageView2 extends View {
     private boolean onTrial = false;
 
     private int target;
+    private boolean fittsMode = true;
+    private int fittsTargetDistance;
+    private int fittsTargetLength;
+    private boolean isOnTarget = false;
 
     public ImageView2(Context paramContext, AttributeSet paramAttributeSet) {
         super(paramContext, paramAttributeSet);
@@ -58,6 +68,11 @@ public class ImageView2 extends View {
         cursorPaint.setStrokeWidth(2);
         cursorPaint.setStyle(Paint.Style.FILL_AND_STROKE);
         cursorPaint.setColor(Color.RED);
+
+        fittsCursorPaint = new Paint();
+        fittsCursorPaint.setStrokeWidth(2);
+        fittsCursorPaint.setStyle(Paint.Style.FILL_AND_STROKE);
+        fittsCursorPaint.setColor(Color.YELLOW);
 
         centerRect = new Rect(638,160,642,340);
         centerPaint = new Paint();
@@ -91,6 +106,14 @@ public class ImageView2 extends View {
         targetMenuPaint.setStrokeWidth(2);
         targetMenuPaint.setStyle(Paint.Style.FILL_AND_STROKE);
         targetMenuPaint.setColor(Color.RED);
+
+        fittsTargetPaint = new Paint();
+        fittsTargetPaint.setStrokeWidth(2);
+        fittsTargetPaint.setStyle(Paint.Style.FILL_AND_STROKE);
+        fittsTargetPaint.setColor(Color.BLUE);
+
+        fittsTargetRect = new Rect(0,0,0,0);
+        centerRect = new Rect(0,0,0,0);
     }
 
     public ImageView2(Context paramContext, AttributeSet paramAttributeSet,
@@ -102,25 +125,38 @@ public class ImageView2 extends View {
         super(context);
     }
 
-
-
     @Override
     protected void onDraw(Canvas canvas) {
-        for (int i = 0; i < menuNum; i++) {
-            if (i == selectedX) {
-                if(i == target)
-                    canvas.drawRect(menuRect[i][0], selectedMenuPaint2);
-                else
-                    canvas.drawRect(menuRect[i][0], selectedMenuPaint);
-            }
-            else
-                if (i == target)
+        if (!fittsMode) {
+            for (int i = 0; i < menuNum; i++) {
+                if (i == selectedX) {
+                    if (i == target)
+                        canvas.drawRect(menuRect[i][0], selectedMenuPaint2);
+                    else
+                        canvas.drawRect(menuRect[i][0], selectedMenuPaint);
+                } else if (i == target) {
                     canvas.drawRect(menuRect[i][0], targetMenuPaint);
-                else
+                } else {
                     canvas.drawRect(menuRect[i][0], menuPaint);
+                }
+            }
+            canvas.drawCircle(centerPoint.x + (int)(angleX  / maxAngleX * (menuWidth / 2)), centerPoint.y  + (int)(angleY / maxAngleY * (menuHeight / 2)), 5, cursorPaint);
+            invalidate();
+        } else {
+            for (int i = 0; i < menuNum; i++) {
+               canvas.drawRect(menuRect[0][0], menuPaint);
+            }
+            if (!isOnTarget)
+                canvas.drawRect(fittsTargetRect, fittsTargetPaint);
+            else
+                canvas.drawRect(fittsTargetRect, selectedMenuPaint2);
+            fittsCursorRect = new Rect(centerPoint.x + (int)(angleX  / maxAngleX * (menuWidth / 2)) - 1, centerPoint.y - menuHeight / 2,
+                    centerPoint.x + (int)(angleX  / maxAngleX * (menuWidth / 2)) + 1, centerPoint.y + menuHeight / 2);
+            canvas.drawRect(fittsCursorRect,fittsCursorPaint);
+            //canvas.drawCircle(centerPoint.x + (int)(angleX  / maxAngleX * (menuWidth / 2)), centerPoint.y  + (int)(angleY / maxAngleY * (menuHeight / 2)), 5, cursorPaint), 5, cursorPaint);
+            invalidate();
         }
-        canvas.drawCircle(centerPoint.x + (int)(angleX  / maxAngleX * (menuWidth / 2)), centerPoint.y  + (int)(angleY / maxAngleY * (menuHeight / 2)), 5, cursorPaint);
-        invalidate();
+
         super.onDraw(canvas);
     }
 
@@ -195,5 +231,15 @@ public class ImageView2 extends View {
 
     public void setTarget(int target) {
         this.target  = target;
+    }
+
+    public void setIsonTarget(boolean x) {
+        isOnTarget = x;
+    }
+    public void setFittsTarget(Point target) {
+        fittsTargetDistance  = target.x;
+        fittsTargetLength = target.y;
+        fittsTargetRect = new Rect(fittsTargetDistance - fittsTargetLength / 2, centerPoint.y - menuHeight / 2,
+                fittsTargetDistance + fittsTargetLength / 2, centerPoint.y + menuHeight / 2);
     }
 }
