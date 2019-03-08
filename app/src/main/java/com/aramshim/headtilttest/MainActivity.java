@@ -82,6 +82,8 @@ public class MainActivity extends AppCompatActivity {
 
     ArrayList<Point> fittsTargets= new ArrayList<Point>();;
 
+    private DataLogger dLogger;
+
     private boolean taskOn = false;
     private Timer dwellTimer;
     private TimerTask confirmTask;
@@ -154,6 +156,12 @@ public class MainActivity extends AppCompatActivity {
                         trialDone();
                     }
                 }
+
+                try {
+                    dLogger.write(strData);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
                 imageview2.setSelectedPosition(tempX, tempY);
             }
         }
@@ -165,10 +173,19 @@ public class MainActivity extends AppCompatActivity {
         //mTextTarget.setText("Target : " + Integer.toString(target) + "\nSelected : " + Integer.toString(selectedX));
         mQuestion.setVisibility(View.VISIBLE);
         imageview2.setOnTrial(false);
+
+        // set block or task termination term here
+        if(cnt>=10) {
+            try {
+                dLogger.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
@@ -240,6 +257,15 @@ public class MainActivity extends AppCompatActivity {
                             mSensorCheck.setText(cnt + " / " + numTrial);
                             cnt++;
                             mBTCheck.setVisibility(View.INVISIBLE);
+                            logIDInput.setVisibility(View.INVISIBLE);
+                            try {
+                                dLogger = new DataLogger(getApplicationContext());
+                                dLogger.start(logID);
+                                dLogger.write("Block started\n");
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+
                             //mSensorCheck.setVisibility(View.INVISIBLE);
                         }
                     } else {
@@ -414,7 +440,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         logIDInput = (EditText)findViewById(R.id.editText);
-        logIDInput.setVisibility(View.INVISIBLE);
+        //logIDInput.setVisibility(View.INVISIBLE);
         logIDInput.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
