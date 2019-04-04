@@ -30,6 +30,9 @@ public class ImageView2 extends View {
     private Rect fittsTargetRect;
     private Paint fittsTargetPaint;
 
+    private Rect fittsTarget2Rect;
+    private Rect verticalBoundRect;
+
     private Rect fittsCursorRect;
     private Paint fittsCursorPaint;
 
@@ -51,7 +54,13 @@ public class ImageView2 extends View {
     private boolean fittsMode = true;
     private int fittsTargetDistance;
     private int fittsTargetLength;
+    private int fittsTarget2Distance;
+    private int fittsTarget2Length;
     private boolean isOnTarget = false;
+    private int step = 1;
+    private boolean twoStepMode = true;
+
+    private int step2Height = 720;
 
     public ImageView2(Context paramContext, AttributeSet paramAttributeSet) {
         super(paramContext, paramAttributeSet);
@@ -113,6 +122,7 @@ public class ImageView2 extends View {
         fittsTargetPaint.setColor(Color.BLUE);
 
         fittsTargetRect = new Rect(0,0,0,0);
+        fittsTarget2Rect = new Rect(0,0,0,0);
         centerRect = new Rect(0,0,0,0);
     }
 
@@ -142,18 +152,61 @@ public class ImageView2 extends View {
             }
             canvas.drawCircle(centerPoint.x + (int)(angleX  / maxAngleX * (menuWidth / 2)), centerPoint.y  + (int)(angleY / maxAngleY * (menuHeight / 2)), 5, cursorPaint);
             invalidate();
-        } else {
+        } else if (fittsMode) {
             for (int i = 0; i < menuNum; i++) {
                canvas.drawRect(menuRect[0][0], menuPaint);
             }
-            if (!isOnTarget)
-                canvas.drawRect(fittsTargetRect, fittsTargetPaint);
-            else
-                canvas.drawRect(fittsTargetRect, selectedMenuPaint2);
-            fittsCursorRect = new Rect(centerPoint.x + (int)(angleX  / maxAngleX * (menuWidth / 2)) - 1, centerPoint.y - menuHeight / 2,
-                    centerPoint.x + (int)(angleX  / maxAngleX * (menuWidth / 2)) + 1, centerPoint.y + menuHeight / 2);
+
+            if (twoStepMode)
+            {
+                if (onTrial)
+                {
+                    if (step == 1)
+                    {
+                        if (!isOnTarget)
+                            canvas.drawRect(fittsTargetRect, fittsTargetPaint);
+                        else
+                            canvas.drawRect(fittsTargetRect, selectedMenuPaint2);
+                    } else
+                        canvas.drawRect(fittsTargetRect, selectedMenuPaint2);
+
+                    if(step == 2) {
+                        if (!isOnTarget)
+                            canvas.drawRect(fittsTarget2Rect, fittsTargetPaint);
+                        else
+                            canvas.drawRect(fittsTarget2Rect, selectedMenuPaint2);
+                        canvas.drawRect(verticalBoundRect, menuPaint);
+                    }
+
+                } else {
+                    canvas.drawRect(fittsTargetRect, confirmedMenuPaint);
+                    canvas.drawRect(fittsTarget2Rect, confirmedMenuPaint);
+                    if (verticalBoundRect != null)
+                        canvas.drawRect(verticalBoundRect, menuPaint);
+                }
+            } else {
+                if (onTrial)
+                {
+                    if (!isOnTarget)
+                        canvas.drawRect(fittsTargetRect, fittsTargetPaint);
+                    else
+                        canvas.drawRect(fittsTargetRect, selectedMenuPaint2);
+                } else {
+                    canvas.drawRect(fittsTargetRect, confirmedMenuPaint);
+                }
+            }
+
+            if (step == 1)
+            {
+                fittsCursorRect = new Rect(centerPoint.x + (int)(angleX  / maxAngleX * (menuWidth / 2)) - 1, centerPoint.y - menuHeight / 2,
+                        centerPoint.x + (int)(angleX  / maxAngleX * (menuWidth / 2)) + 1, centerPoint.y + menuHeight / 2);
+            } else if (step == 2)
+            {
+                fittsCursorRect = new Rect(fittsTargetDistance - fittsTargetLength / 2, centerPoint.y + (int)(angleY  / maxAngleY * (step2Height / 2)) - 1,
+                        fittsTargetDistance + fittsTargetLength / 2, centerPoint.y + (int)(angleY  / maxAngleY * (step2Height / 2)) + 1);
+            }
             canvas.drawRect(fittsCursorRect,fittsCursorPaint);
-            //canvas.drawCircle(centerPoint.x + (int)(angleX  / maxAngleX * (menuWidth / 2)), centerPoint.y  + (int)(angleY / maxAngleY * (menuHeight / 2)), 5, cursorPaint), 5, cursorPaint);
+            //canvas.drawCircle(centerPoint.x + (int)(angleX  / maxAngleX * (menuWidth / 2)), centerPoint.y  + (int)(angleY / maxAngleY * (menuHeight / 2)), 5, cursorPaint);
             invalidate();
         }
 
@@ -179,37 +232,10 @@ public class ImageView2 extends View {
 
     public void setAngleX(double angle) {
         angleX = angle;
-        /*
-        if (angle > 180)
-            angleX = angle - 360;
-        else if (angle < - 180)
-            angleX = 360 + angle;
-        if (angleX > maxAngleX)
-        {
-            angleX = maxAngleX;
-        } else if (angleX < -maxAngleX)
-        {
-            angleX = - maxAngleX;
-        }
-        */
     }
 
     public void setAngleY(double angle) {
         angleY = angle;
-        /*
-        if (angle > 180)
-            angleY = angle - 360;
-        else if (angle < - 180)
-            angleY = 360 + angle;
-        if (angleY > maxAngleY)
-        {
-            angleY= maxAngleY;
-        } else if (angleY < -maxAngleY)
-        {
-            angleY = - maxAngleY;
-        }
-        angleY = -angleY;
-        */
     }
 
     public void setMaxAngleX(int angle) {
@@ -236,10 +262,25 @@ public class ImageView2 extends View {
     public void setIsonTarget(boolean x) {
         isOnTarget = x;
     }
+
     public void setFittsTarget(Point target) {
         fittsTargetDistance  = target.x;
         fittsTargetLength = target.y;
         fittsTargetRect = new Rect(fittsTargetDistance - fittsTargetLength / 2, centerPoint.y - menuHeight / 2,
                 fittsTargetDistance + fittsTargetLength / 2, centerPoint.y + menuHeight / 2);
+
+        verticalBoundRect = new Rect(fittsTargetDistance - fittsTargetLength / 2, centerPoint.y - step2Height / 2,
+                fittsTargetDistance + fittsTargetLength / 2, centerPoint.y + step2Height / 2);
+    }
+
+    public void setFittsTarget2(Point target) {
+        fittsTarget2Distance  = target.x;
+        fittsTarget2Length = target.y;
+        fittsTarget2Rect = new Rect(fittsTargetDistance - fittsTargetLength / 2, fittsTarget2Distance - fittsTarget2Length / 2,
+                fittsTargetDistance + fittsTargetLength / 2, fittsTarget2Distance + fittsTarget2Length / 2);
+    }
+
+    public void setStep(int s) {
+        step = s;
     }
 }

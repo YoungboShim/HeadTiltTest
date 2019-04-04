@@ -35,7 +35,7 @@
         android:layout_height="80px"
         android:layout_marginStart="1050px"
         android:layout_marginTop="600px"
-        android:text="SEAT"
+        android:text="SIT"
         android:textSize="30px"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
@@ -142,10 +142,10 @@
 
     <TextView
         android:id="@+id/textViewTarget"
-        android:layout_width="wrap_content"
+        android:layout_width="1280px"
         android:layout_height="wrap_content"
-        android:layout_marginStart="500px"
-        android:layout_marginTop="50px"
+        android:layout_marginTop="80px"
+        android:textAlignment="center"
         android:textColor="@color/colorAccent"
         android:textSize="50px"
         app:layout_constraintStart_toStartOf="parent"
@@ -154,8 +154,9 @@
     <EditText
         android:id="@+id/editText"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="52dp"
+        android:layout_height="100px"
+        android:layout_marginTop="120px"
+        android:layout_marginLeft="20px"
         android:ems="10"
         android:inputType="textPersonName"
         android:text="test"

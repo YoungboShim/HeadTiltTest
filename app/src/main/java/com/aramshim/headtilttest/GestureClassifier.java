@@ -30,7 +30,7 @@ public class GestureClassifier {
         if(++idxEnd >= binSize)
             idxEnd = 0;
 
-        while(time[idxStart] < currTime - 1000){
+        while(time[idxStart] < currTime - 500){
             if(++idxStart >= binSize)
                 idxStart = 0;
         }

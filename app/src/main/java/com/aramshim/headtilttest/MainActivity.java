@@ -44,56 +44,88 @@ public class MainActivity extends AppCompatActivity {
     private final String TAG = MainActivity.class.getSimpleName();
     ImageView2 imageview2;
     TextView  mTextTarget;
-    TextView mMenuNum, mMaxAngleX, mMaxAngleY;
     TextView mQuestion, mBTCheck, mSensorCheck;
     Button  btnMode, btnCondition, btnBluetooth;
+
+    TextView mMenuNum, mMaxAngleX, mMaxAngleY;
     Button btnMaxXPlus, btnMaxXMinus, btnMaxYPlus, btnMaxYMinus,  btnMenuNumPlus, btnMenuNumMinus;
+
     EditText logIDInput;
-    double headYaw = 0f, chestYaw = 0f, initYaw = 0f;
+    double headYaw = 0f, initYaw = 0f;
     double headPitch = 0f, initPitch = 0f;
+    double headRoll = 0f;
+
     UsbSerialPort mPort;
     String logID = "test";
 
     private final ExecutorService mExecutor = Executors.newSingleThreadExecutor();
 
-    int maxAngleX = 80;
-    int maxAngleY = 30;
+    int maxAngleX = 55;
+    int maxAngleY = 45;
     int screenWidth = 1280;
     int screenHeight = 720;
     Point centerPoint = new Point(screenWidth / 2, screenHeight / 2);
     int menuWidth = screenWidth;
-    int menuHeight = 200;
+    int menuHeight = 150;
     int menuNum = 1;
     int selectedX = 0;
     int selectedY = 0;
     SoundPool sound = new SoundPool(1, AudioManager.STREAM_MUSIC,0);
     int soundId;
+
+    int step = 1;
+
     int target;
     Point fittsTarget;
-
+    Point fittsTarget2;
 
     int numBlock = 3;
-    int numRepeat = 2;
-    ArrayList<Integer> numTargets = new ArrayList<>(Arrays.asList(15));
-    ArrayList<Point> targets;
-    int cnt = 0;
-    int numTrial = 0;
-    boolean onBlock = false;
+    int numRepeat = 1;
 
-    ArrayList<Point> fittsTargets= new ArrayList<Point>();;
+    ArrayList<Integer> numTargets = new ArrayList<>(Arrays.asList(menuNum));
+    ArrayList<Point> targets;
+
+    int cntTrial = 0;
+    int numTrial = 0;
+
+    ArrayList<Point> fittsTargets= new ArrayList<Point>();
 
     private DataLogger dLogger;
+    private DataLogger dLogger_result;
 
-    private boolean taskOn = false;
     private Timer dwellTimer;
     private TimerTask confirmTask;
+
     private boolean dwellMode = false;
     private boolean seatMode = true;
     private boolean fittsMode = true;
+    private boolean twoStepMode = true;
 
     private GestureClassifier gestureClassifier;
 
     private SerialInputOutputManager mSerialIoManager;
+
+    private State state = State.INIT;
+    private boolean isOnTarget = false;
+
+    ArrayList<Integer> list_targetDistance =  new ArrayList<Integer>(Arrays.asList(14, 28, 42, 56, 70));
+    ArrayList<Integer> list_targetSize =  new ArrayList<Integer>(Arrays.asList(4, 8, 12, 16, 20));
+
+    private long startTime = 0;
+    private long endTime;
+    private int numCross;
+    private boolean previousIsOnTarget;
+    private int currentBlock = 0;
+    private int comfortLevel = -1;
+    private double endPoint;
+    private int currentCondition = 0;
+    private Timer mTimer;
+
+    Point tempStep2Target = new Point(360 - 30 * 8, 15 * 8);
+
+    public enum State {
+        INIT, BLOCK_BREAK, TRIAL_BREAK, TRIAL
+    }
 
     private final SerialInputOutputManager.Listener mListener =
             new SerialInputOutputManager.Listener() {
@@ -122,64 +154,159 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
         }
 
-        if(strData.split(",")[0].equals("100-0")) {
+        if(strData.split(",")[0].equals("100-1")) {
             headYaw = Double.parseDouble(strData.split(",")[3]);
             headPitch = Double.parseDouble(strData.split(",")[1]);
             double yaw = getYaw(headYaw - initYaw);
             double pitch = getPitch(headPitch - initPitch);
             boolean menuChanged = false;
-            boolean isOnTarget = false;
-            if(taskOn) {
+
+            if(state == State.TRIAL) {
+                endTime = System.currentTimeMillis();
+                if (endTime - startTime >= 5000)
+                {
+                    confirmTask.cancel();
+                    mTextTarget.setText("Failed");
+                    endTime = startTime + 5000;
+                    try {
+                        //dLogger.trace_write(strData);
+                        if (fittsMode)
+                            dLogger.just_write(currentBlock + "," + cntTrial + "," + (fittsTarget.x-640)/8 + "," + fittsTarget.y/8 + "," + (endTime - startTime) + ","+ strData);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    trialDone();
+                    mTextTarget.setVisibility(View.VISIBLE);
+                    return;
+                }
+
+                mTextTarget.setVisibility(View.INVISIBLE);
                 imageview2.setAngleX(yaw);
                 imageview2.setAngleY(pitch);
-                int tempX = (int) ((yaw + maxAngleX) / (maxAngleX * 2f / menuNum));
-                if (tempX >= menuNum){
-                    tempX = menuNum - 1;
-                }
-                int tempY = (int) ((pitch + maxAngleY) / (maxAngleY * 2f / menuNum));
-                if (tempY >= menuNum){
-                    tempY = menuNum - 1;
-                }
-                tempY = 0;
-                menuChanged = checkMenuChanged(tempX, tempY);
-                isOnTarget = checkOnTarget(centerPoint.x + (int) (yaw  / maxAngleX * (menuWidth / 2)));
-                imageview2.setIsonTarget(isOnTarget);
-                if(dwellMode && !isOnTarget){
-                    confirmTask.cancel();
-                    createTimerTask();
-                    dwellTimer.schedule(confirmTask, 2000);
-                }
-                if(!dwellMode)
-                {
-                    if(gestureClassifier.updateData(headYaw, headPitch, !isOnTarget, System.currentTimeMillis()))
-                    {
-                        trialDone();
+                endPoint = yaw;
+
+                if (fittsMode) {
+                    previousIsOnTarget = isOnTarget;
+                    isOnTarget = checkOnTarget(centerPoint.x + (int) (yaw  / maxAngleX * (menuWidth / 2)));
+                    if (isOnTarget == false && previousIsOnTarget == true)
+                        numCross++;
+                    imageview2.setIsonTarget(isOnTarget);
+
+                    if (twoStepMode) {
+                        if (step == 1)
+                        {
+                            isOnTarget = checkOnTarget(centerPoint.x + (int) (yaw  / maxAngleX * (menuWidth / 2)));
+                            if (isOnTarget == true && Math.abs(pitch) > 10)
+                            {
+                                step = 2;
+                                imageview2.setStep(2);
+                            }
+                        } else if (step == 2) {
+                            isOnTarget = checkOnTarget2(centerPoint.y + (int) (pitch  / maxAngleY * (720 / 2)));
+                            imageview2.setIsonTarget(isOnTarget);
+                            if(!isOnTarget){
+                                confirmTask.cancel();
+                                createTimerTask();
+                                dwellTimer.schedule(confirmTask, 500);
+                            }
+                        }
+                    } else  {
+                        if(dwellMode && !isOnTarget){
+                            confirmTask.cancel();
+                            createTimerTask();
+                            dwellTimer.schedule(confirmTask, 500);
+                        }
+                        if(!dwellMode)
+                        {
+                            if(gestureClassifier.updateData(headYaw, headPitch, !isOnTarget, System.currentTimeMillis()))
+                                trialDone();
+                        }
                     }
+
+                } else if (!fittsMode) {
+                    int tempX = (int) ((yaw + maxAngleX) / (maxAngleX * 2f / menuNum));
+                    if (tempX >= menuNum){
+                        tempX = menuNum - 1;
+                    }
+                    int tempY = (int) ((pitch + maxAngleY) / (maxAngleY * 2f / menuNum));
+                    if (tempY >= menuNum){
+                        tempY = menuNum - 1;
+                    }
+                    //tempY = 0;
+                    menuChanged = checkMenuChanged(tempX, tempY);
+                    if(dwellMode && menuChanged){
+                        confirmTask.cancel();
+                        createTimerTask();
+                        dwellTimer.schedule(confirmTask, 500);
+                    }
+                    if(!dwellMode)
+                    {
+                        if(gestureClassifier.updateData(headYaw, headPitch, menuChanged, System.currentTimeMillis()))
+                        {
+                            trialDone();
+                        }
+                    }
+                    imageview2.setSelectedPosition(tempX, tempY);
                 }
 
                 try {
-                    dLogger.write(strData);
+                    //dLogger.trace_write(strData);
+                    if (fittsMode)
+                        dLogger.just_write(currentBlock + "," + cntTrial + "," + (fittsTarget.x-640)/8 + "," + fittsTarget.y/8 + "," + (endTime - startTime) + ","+ strData);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                imageview2.setSelectedPosition(tempX, tempY);
+
             }
         }
     }
 
     public void trialDone() {
-        taskOn = false;
-        mTextTarget.setVisibility(View.VISIBLE);
-        //mTextTarget.setText("Target : " + Integer.toString(target) + "\nSelected : " + Integer.toString(selectedX));
+        state  = State.TRIAL_BREAK;
+        isOnTarget = false;
         mQuestion.setVisibility(View.VISIBLE);
+        mTextTarget.setVisibility(View.INVISIBLE);
         imageview2.setOnTrial(false);
+        imageview2.setIsonTarget(false);
+        imageview2.setStep(1);
+        step = 1;
+        //endTime = System.currentTimeMillis();
 
         // set block or task termination term here
-        if(cnt>=10) {
+        /*
+        if(cnt>=numTrial) {
             try {
                 dLogger.close();
             } catch (IOException e) {
                 e.printStackTrace();
+            }
+        }
+        */
+    }
+
+    class CustomTimer extends TimerTask{
+        @Override
+        public void run() {
+            cntTrial += 1;
+            numCross = 0;
+            comfortLevel = -1;
+            initYaw = headYaw;
+            initPitch = headPitch;
+            startTime = System.currentTimeMillis();
+            state = State.TRIAL;
+            imageview2.setAngleX(0);
+            imageview2.setAngleY(0);
+            imageview2.setOnTrial(true);
+            if (fittsMode) {
+                fittsTarget = fittsTargets.remove(new Random().nextInt(fittsTargets.size()));
+                fittsTarget2 = tempStep2Target;
+                imageview2.setFittsTarget(fittsTarget);
+                imageview2.setFittsTarget2(fittsTarget2);
+            }
+            else {
+                Point tempTarget = targets.remove(new Random().nextInt(targets.size()));
+                imageview2.setMenuNum(tempTarget.y + 1);
+                imageview2.setTarget(tempTarget.x);
             }
         }
     }
@@ -209,69 +336,164 @@ public class MainActivity extends AppCompatActivity {
 
                 if (strData.trim().split(" ")[0].equals("l"))
                 {
-                    if (onBlock)
+                    if (state == State.TRIAL_BREAK) {
                         mQuestion.setText("Question : Yes");
+                        comfortLevel = 1;
+                    }
                     else
                         mBTCheck.setText("l");
                 }
                 else if (strData.trim().split(" ")[0].equals("r"))
                 {
-                    if (onBlock)
+                    if (state == State.TRIAL_BREAK) {
                         mQuestion.setText("Question : No");
+                        comfortLevel = 0;
+                    }
                     else
                         mBTCheck.setText("r");
                 }
                 else if (strData.trim().split(" ")[0].equals("c"))
                 {
-                    if (fittsMode) {
-                        if (onBlock) {
-                            taskOn = true;
-                            imageview2.setOnTrial(true);
-                            initYaw = headYaw;
-                            initPitch = headPitch;
-                            mQuestion.setText("Question : ");
-                            mQuestion.setVisibility(View.INVISIBLE);
-                            mTextTarget.setVisibility(View.INVISIBLE);
-                            fittsTarget = fittsTargets.remove(new Random().nextInt(fittsTargets.size()));
-                            Log.d("target",fittsTarget.x + "");
-                            imageview2.setFittsTarget(fittsTarget);
-                            if (dwellMode) {
-                                confirmTask.cancel();
-                                createTimerTask();
-                                dwellTimer.schedule(confirmTask, 2000);
+                    if (true) {
+                        if (state == State.INIT) {
+                            if (System.currentTimeMillis() - startTime < 10000) {
+                                return;
                             }
-                            mSensorCheck.setText(cnt + " / " + numTrial);
-                            cnt++;
-                        } else {
-                            onBlock = true;
-                            fittsTargets.add(new Point(100, 25));
-                            fittsTargets.add(new Point(150, 50));
-                            fittsTargets.add(new Point(200, 75));
-                            fittsTargets.add(new Point(300, 25));
-                            fittsTargets.add(new Point(350, 50));
-                            fittsTargets.add(new Point(400, 75));
-                            fittsTargets.add(new Point(450, 25));
-                            fittsTargets.add(new Point(500, 50));
-                            fittsTargets.add(new Point(550, 75));
-                            numTrial = fittsTargets.size();
-                            mSensorCheck.setText(cnt + " / " + numTrial);
-                            cnt++;
+
                             mBTCheck.setVisibility(View.INVISIBLE);
                             logIDInput.setVisibility(View.INVISIBLE);
+                            btnCondition.setVisibility(View.INVISIBLE);
+                            btnMode.setVisibility(View.INVISIBLE);
+                            mTextTarget.setVisibility(View.VISIBLE);
+
+                            currentCondition++;
+                            mTextTarget.setText("Start Condition " + currentCondition);
+
+                            state = State.BLOCK_BREAK;
+                            currentBlock = 0;
+
                             try {
                                 dLogger = new DataLogger(getApplicationContext());
-                                dLogger.start(logID);
-                                dLogger.write("Block started\n");
+                                dLogger_result = new DataLogger((getApplicationContext()));
+
+                                if (seatMode == true)
+                                {
+                                    if (dwellMode == true)
+                                    {
+                                        dLogger.start(logID+"sit_dwell_trace");
+                                        dLogger_result.start(logID+"sit_dwell_result");
+                                    } else {
+                                        dLogger.start(logID+"sit_nod_trace");
+                                        dLogger_result.start(logID+"sit_nod_result");
+                                    }
+                                } else {
+                                    if (dwellMode == true)
+                                    {
+                                        dLogger.start(logID+"walk_dwell_trace");
+                                        dLogger_result.start(logID+"walk_dwell_result");
+                                    } else {
+                                        dLogger.start(logID+"walk_nod_trace");
+                                        dLogger_result.start(logID+"walk_nod_result");
+                                    }
+                                }
+                                dLogger.just_write("Block, Trial, Angle, Size, Time,ID,Roll,Pitch,Yaw,DistX,DistY,DistZ,Battery\n");
+                                dLogger_result.just_write("Block, Trial, Angle, Size, Condition, Gesture, Response time, Cross, Comfort, Error\n");
                             } catch (IOException e) {
                                 e.printStackTrace();
                             }
+                        } else if (state == State.TRIAL_BREAK) {
+                            if (cntTrial != 0 && comfortLevel == -1)
+                                return;
 
-                            //mSensorCheck.setVisibility(View.INVISIBLE);
+                            if (cntTrial > 0) {
+                                try {
+                                    if (fittsMode){
+                                    dLogger_result.just_write(currentBlock + "," + cntTrial + "," + (fittsTarget.x-640)/8 + "," + fittsTarget.y/8
+                                            + "," + seatMode + "," + dwellMode + "," + (endTime - startTime)  + "," +  numCross  + "," + comfortLevel + "," + (endPoint - (fittsTarget.x-640)/8)+"\n");}
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+
+                            if (cntTrial >= numTrial)
+                            {
+                                mTextTarget.setVisibility(View.VISIBLE);
+                                mTextTarget.setText("Block " + currentBlock + " end");
+                                mQuestion.setVisibility(View.INVISIBLE);
+                                state = State.BLOCK_BREAK;
+                                imageview2.setFittsTarget(new Point(0,0));
+                                imageview2.setFittsTarget2(new Point(0,0));
+                                startTime = System.currentTimeMillis();
+                                return;
+                            }
+
+                            mTimer = new Timer();
+                            mTimer.schedule(new CustomTimer(), 1000);
+
+                            mTextTarget.setVisibility(View.VISIBLE);
+                            mTextTarget.setText("Please look ahead");
+                            mSensorCheck.setText((cntTrial + 1) + " / " + numTrial);
+                            mQuestion.setText("Question : ");
+                            mQuestion.setVisibility(View.INVISIBLE);
+
+                            imageview2.setFittsTarget(new Point(0,0));
+                            imageview2.setFittsTarget2(new Point(0,0));
+                            imageview2.setAngleX(0);
+
+                        } else if (state == State.BLOCK_BREAK) {
+
+                            if (currentBlock < numBlock) {
+                                if (System.currentTimeMillis() - startTime < 10000) {
+                                    return;
+                                }
+
+                                currentBlock++;
+                                mTextTarget.setText("Block " + currentBlock + " start");
+                                state = State.TRIAL_BREAK;
+
+                                if (fittsMode) {
+                                    fittsTargets = new ArrayList<Point>();
+                                    for (int size : list_targetSize) {
+                                        for (int distance : list_targetDistance) {
+                                            for (int i = 0; i < numRepeat ; i++) {
+                                                fittsTargets.add(new Point(640 + distance * (1280 / 160), size * (1280 / 160)));
+                                                fittsTargets.add(new Point(640 - distance * (1280 / 160), size * (1280 / 160)));
+                                            }
+                                        }
+                                    }
+                                    numTrial = fittsTargets.size();
+                                } else {
+                                    targets = new ArrayList<Point>();
+                                    for (int num: numTargets) {
+                                        for (int i = 0; i < num; i++) {
+                                            for (int j = 0; j < numRepeat; j++) {
+                                                targets.add(new Point(i, num-1));
+                                                numTrial++;
+                                            }
+                                        }
+                                    }
+                                }
+                                cntTrial = 0;
+                                mSensorCheck.setText(cntTrial + " / " + numTrial);
+                            } else {
+                                try {
+                                    btnCondition.setVisibility(View.VISIBLE);
+                                    btnMode.setVisibility(View.VISIBLE);
+                                    state = State.INIT;
+                                    mTextTarget.setText("Finished");
+                                    dLogger.close();
+                                    dLogger_result.close();
+                                    startTime = System.currentTimeMillis();
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+                            }
                         }
                     } else {
+                        /*
                         if (onBlock)
                         {
-                            taskOn = true;
+                            state = State.TRIAL;
                             imageview2.setOnTrial(true);
                             initYaw = headYaw;
                             initPitch = headPitch;
@@ -287,7 +509,7 @@ public class MainActivity extends AppCompatActivity {
                             if(dwellMode) {
                                 confirmTask.cancel();
                                 createTimerTask();
-                                dwellTimer.schedule(confirmTask, 2000);
+                                dwellTimer.schedule(confirmTask, 500);
                             }
                             mSensorCheck.setText(cnt + " / " + numTrial);
                             cnt++;
@@ -309,10 +531,12 @@ public class MainActivity extends AppCompatActivity {
                             mBTCheck.setVisibility(View.INVISIBLE);
                             //mSensorCheck.setVisibility(View.INVISIBLE);
                         }
+                        */
                     }
                 }
             }
         };
+
         btModule.setOnButtonClickCb(callback);
 
         mTextTarget = (TextView) findViewById(R.id.textViewTarget);
@@ -332,6 +556,11 @@ public class MainActivity extends AppCompatActivity {
         imageview2.setSelectedPosition(selectedX,selectedY);
         mMaxAngleX.setText(maxAngleX+"");
         mMaxAngleY.setText(maxAngleY+"");
+
+        mMaxAngleX.setVisibility(View.INVISIBLE);
+        mMaxAngleY.setVisibility(View.INVISIBLE);
+        mMenuNum.setVisibility(View.INVISIBLE);
+
 
         btnMode = (Button) findViewById(R.id.buttonMode);
         btnMode.setOnClickListener(new Button.OnClickListener() {
@@ -360,7 +589,7 @@ public class MainActivity extends AppCompatActivity {
                 } else
                 {
                     seatMode = true;
-                    btnCondition.setText("SEAT");
+                    btnCondition.setText("SIT");
                 }
             }
         });
@@ -383,6 +612,8 @@ public class MainActivity extends AppCompatActivity {
                 mMaxAngleX.setText(maxAngleX+"");
             }
         });
+        btnMaxXPlus.setVisibility(View.INVISIBLE);
+
 
         btnMaxXMinus = (Button) findViewById(R.id.buttonAngleXMinus);
         btnMaxXMinus.setOnClickListener(new Button.OnClickListener() {
@@ -394,6 +625,7 @@ public class MainActivity extends AppCompatActivity {
                 mMaxAngleX.setText(maxAngleX+"");
             }
         });
+        btnMaxXMinus.setVisibility(View.INVISIBLE);
 
         btnMaxYPlus = (Button) findViewById(R.id.buttonAngleYPlus);
         btnMaxYPlus.setOnClickListener(new Button.OnClickListener() {
@@ -405,6 +637,7 @@ public class MainActivity extends AppCompatActivity {
                 mMaxAngleY.setText(maxAngleY+"");
             }
         });
+        btnMaxYPlus.setVisibility(View.INVISIBLE);
 
         btnMaxYMinus = (Button) findViewById(R.id.buttonAngleYMinus);
         btnMaxYMinus.setOnClickListener(new Button.OnClickListener() {
@@ -416,6 +649,7 @@ public class MainActivity extends AppCompatActivity {
                 mMaxAngleY.setText(maxAngleY+"");
             }
         });
+        btnMaxYMinus.setVisibility(View.INVISIBLE);
 
         btnMenuNumPlus = (Button) findViewById(R.id.buttonMenuNumPlus);
         btnMenuNumPlus.setOnClickListener(new Button.OnClickListener() {
@@ -427,6 +661,7 @@ public class MainActivity extends AppCompatActivity {
                 mMenuNum.setText(menuNum+"");
             }
         });
+        btnMenuNumPlus.setVisibility(View.INVISIBLE);
 
         btnMenuNumMinus = (Button) findViewById(R.id.buttonMenuNumMinus);
         btnMenuNumMinus.setOnClickListener(new Button.OnClickListener() {
@@ -438,6 +673,7 @@ public class MainActivity extends AppCompatActivity {
                 mMenuNum.setText(menuNum+"");
             }
         });
+        btnMenuNumMinus.setVisibility(View.INVISIBLE);
 
         logIDInput = (EditText)findViewById(R.id.editText);
         //logIDInput.setVisibility(View.INVISIBLE);
@@ -466,20 +702,6 @@ public class MainActivity extends AppCompatActivity {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-        /*
-        if(dwellMode) {
-            createTimerTask();
-            dwellTimer = new Timer();
-        }
-        else{
-            try {
-                gestureClassifier = new GestureClassifier(this);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        */
     }
 
     @Override
@@ -537,6 +759,7 @@ public class MainActivity extends AppCompatActivity {
         return angleY;
     }
 
+    //for Block menu
     private boolean checkMenuChanged(int x, int y)
     {
         if (x != selectedX || y != selectedY)
@@ -554,7 +777,17 @@ public class MainActivity extends AppCompatActivity {
 
     private boolean checkOnTarget(int x)
     {
-        if (fittsTarget.x - fittsTarget.y /2 <= x && x <= fittsTarget.x + fittsTarget.y / 2)
+        if (fittsTarget.x - fittsTarget.y / 2  <= x && x <= fittsTarget.x + fittsTarget.y / 2)
+        {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private boolean checkOnTarget2(int y)
+    {
+        if (fittsTarget2.x - fittsTarget2.y / 2  <= y && y <= fittsTarget2.x + fittsTarget2.y / 2)
         {
             return true;
         } else {

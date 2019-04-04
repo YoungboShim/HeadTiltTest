@@ -30,8 +30,8 @@ public class DataLogger {
             Log.d(TAG, "start: " + saveFile.getPath());
             fWriter = new FileWriter(saveFile, false);
             taskStartTime = System.currentTimeMillis();
-            fWriter.write("Time,ID,Roll,Pitch,Yaw,DistX,DistY,DistZ,Battery\n");
-            fWriter.flush();
+            //fWriter.write("Time,ID,Roll,Pitch,Yaw,DistX,DistY,DistZ,Battery\n");
+            //fWriter.flush();
             connectionOn = true;
             Toast.makeText(dlContext, "Log writer started", Toast.LENGTH_SHORT).show();
         }
@@ -54,7 +54,14 @@ public class DataLogger {
         return connectionOn;
     }
 
-    public void write(String data) throws IOException {
+    public void just_write(String data) throws IOException {
+        if(isOpen()) {
+            fWriter.write(data);
+            fWriter.flush();
+        }
+    }
+
+    public void trace_write(String data) throws IOException {
         if(isOpen()) {
             long tmpTime = System.currentTimeMillis() - taskStartTime;
             String timeStr = Long.toString(tmpTime);
