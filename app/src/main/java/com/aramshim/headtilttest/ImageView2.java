@@ -167,8 +167,9 @@ public class ImageView2 extends View {
                             canvas.drawRect(fittsTargetRect, fittsTargetPaint);
                         else
                             canvas.drawRect(fittsTargetRect, selectedMenuPaint2);
-                    } else
-                        canvas.drawRect(fittsTargetRect, selectedMenuPaint2);
+                        canvas.drawRect(fittsTarget2Rect, menuPaint);
+                    } // else
+                        // canvas.drawRect(fittsTargetRect, selectedMenuPaint2);
 
                     if(step == 2) {
                         if (!isOnTarget)

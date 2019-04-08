@@ -101,6 +101,7 @@ public class MainActivity extends AppCompatActivity {
     private boolean seatMode = true;
     private boolean fittsMode = true;
     private boolean twoStepMode = true;
+    private boolean orthMode = true;
 
     private GestureClassifier gestureClassifier;
 
@@ -109,10 +110,10 @@ public class MainActivity extends AppCompatActivity {
     private State state = State.INIT;
     private boolean isOnTarget = false;
 
-    ArrayList<Integer> list_htargetDistance =  new ArrayList<Integer>(Arrays.asList(0, 28, 56));
+    ArrayList<Integer> list_htargetDistance =  new ArrayList<Integer>(Arrays.asList(28));
     ArrayList<Integer> list_htargetSize =  new ArrayList<Integer>(Arrays.asList(12));
-    ArrayList<Integer> list_vtargetDistance =  new ArrayList<Integer>(Arrays.asList(0, 25, 50));
-    ArrayList<Integer> list_vtargetSize =  new ArrayList<Integer>(Arrays.asList(8, 16));
+    ArrayList<Integer> list_vtargetDistance =  new ArrayList<Integer>(Arrays.asList(20, 40));
+    ArrayList<Integer> list_vtargetSize =  new ArrayList<Integer>(Arrays.asList(8, 12));
 
     private long startTime = 0;
     private long endTime;
@@ -123,6 +124,7 @@ public class MainActivity extends AppCompatActivity {
     private double endPoint;
     private int currentCondition = 0;
     private Timer mTimer;
+    private double degOnEntry = 0;
 
     Point tempStep2Target = new Point(360 - 30 * 8, 15 * 8);
 
@@ -166,11 +168,11 @@ public class MainActivity extends AppCompatActivity {
 
             if(state == State.TRIAL) {
                 endTime = System.currentTimeMillis();
-                if (endTime - startTime >= 5000)
+                if (endTime - startTime >= 10000)
                 {
                     confirmTask.cancel();
                     mTextTarget.setText("Failed");
-                    endTime = startTime + 5000;
+                    endTime = startTime + 10000;
                     try {
                         //dLogger.trace_write(strData);
                         if (fittsMode)
@@ -190,27 +192,45 @@ public class MainActivity extends AppCompatActivity {
 
                 if (fittsMode) {
                     previousIsOnTarget = isOnTarget;
-                    isOnTarget = checkOnTarget(centerPoint.x + (int) (yaw  / maxAngleX * (menuWidth / 2)));
-                    if (isOnTarget == false && previousIsOnTarget == true)
-                        numCross++;
-                    imageview2.setIsonTarget(isOnTarget);
 
                     if (twoStepMode) {
                         if (step == 1)
                         {
                             isOnTarget = checkOnTarget(centerPoint.x + (int) (yaw  / maxAngleX * (menuWidth / 2)));
-                            if (isOnTarget == true && Math.abs(pitch) > 10)
+                            if (isOnTarget == false && previousIsOnTarget == true)
+                                numCross++;
+                            else if (isOnTarget == true && previousIsOnTarget == false)
+                                degOnEntry = pitch;
+                            imageview2.setIsonTarget(isOnTarget);
+                            if (isOnTarget == true && Math.abs(pitch - degOnEntry) > 10)
                             {
+                                degOnEntry = 0;
+                                isOnTarget = false;
                                 step = 2;
                                 imageview2.setStep(2);
                             }
                         } else if (step == 2) {
-                            isOnTarget = checkOnTarget2(centerPoint.y + (int) (pitch  / maxAngleY * (720 / 2)));
-                            imageview2.setIsonTarget(isOnTarget);
-                            if(!isOnTarget){
-                                confirmTask.cancel();
-                                createTimerTask();
-                                dwellTimer.schedule(confirmTask, 500);
+                            if(orthMode){
+                                isOnTarget = checkOnTarget2(centerPoint.y + (int) (pitch / maxAngleY * (720 / 2)));
+                                if (isOnTarget == false && previousIsOnTarget == true)
+                                    numCross++;
+                                else if (isOnTarget == true && previousIsOnTarget == false)
+                                    degOnEntry = yaw;
+
+                                imageview2.setIsonTarget(isOnTarget);
+                                if (isOnTarget == true && Math.abs(yaw - degOnEntry) > 10)
+                                {
+                                    trialDone();
+                                }
+                            }
+                            else {
+                                isOnTarget = checkOnTarget2(centerPoint.y + (int) (pitch / maxAngleY * (720 / 2)));
+                                imageview2.setIsonTarget(isOnTarget);
+                                if (!isOnTarget) {
+                                    confirmTask.cancel();
+                                    createTimerTask();
+                                    dwellTimer.schedule(confirmTask, 500);
+                                }
                             }
                         }
                     } else  {
@@ -266,6 +286,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void trialDone() {
         state  = State.TRIAL_BREAK;
+        degOnEntry = 0;
         isOnTarget = false;
         mQuestion.setVisibility(View.VISIBLE);
         mTextTarget.setVisibility(View.INVISIBLE);
@@ -459,7 +480,7 @@ public class MainActivity extends AppCompatActivity {
                                     list_hTargets = new ArrayList<Point>();
                                     for (int size : list_htargetSize) {
                                         for (int distance : list_htargetDistance) {
-                                            for (int i = 0; i < numRepeat ; i++) {
+                                            for (int i = 0; i < list_vtargetSize.size() * list_vtargetDistance.size() ; i++) {
                                                 list_hTargets.add(new Point(640 + distance * (1280 / 160), size * (1280 / 160)));
                                                 list_hTargets.add(new Point(640 - distance * (1280 / 160), size * (1280 / 160)));
                                             }
@@ -467,12 +488,10 @@ public class MainActivity extends AppCompatActivity {
                                     }
 
                                     list_vTargets = new ArrayList<Point>();
-                                    for (int i = 0; i < numRepeat / 2 ; i++){
-                                        for (int size : list_vtargetSize){
-                                            for (int distance : list_vtargetDistance) {
-                                                list_vTargets.add(new Point(360 - distance * (720 / maxAngleY / 2), size * (720 / maxAngleY / 2)));
-                                                list_vTargets.add(new Point(360 + distance * (720 / maxAngleY / 2), size * (720 / maxAngleY / 2)));
-                                            }
+                                    for (int size : list_vtargetSize){
+                                        for (int distance : list_vtargetDistance) {
+                                            list_vTargets.add(new Point(360 - distance * (720 / maxAngleY / 2), size * (720 / maxAngleY / 2)));
+                                            list_vTargets.add(new Point(360 + distance * (720 / maxAngleY / 2), size * (720 / maxAngleY / 2)));
                                         }
                                     }
                                     numTrial = list_hTargets.size();
