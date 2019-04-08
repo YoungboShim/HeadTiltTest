@@ -61,7 +61,7 @@ public class MainActivity extends AppCompatActivity {
     private final ExecutorService mExecutor = Executors.newSingleThreadExecutor();
 
     int maxAngleX = 55;
-    int maxAngleY = 45;
+    int maxAngleY = 60;
     int screenWidth = 1280;
     int screenHeight = 720;
     Point centerPoint = new Point(screenWidth / 2, screenHeight / 2);
@@ -80,7 +80,7 @@ public class MainActivity extends AppCompatActivity {
     Point fittsTarget2;
 
     int numBlock = 3;
-    int numRepeat = 1;
+    int numRepeat = 12;
 
     ArrayList<Integer> numTargets = new ArrayList<>(Arrays.asList(menuNum));
     ArrayList<Point> targets;
@@ -88,7 +88,8 @@ public class MainActivity extends AppCompatActivity {
     int cntTrial = 0;
     int numTrial = 0;
 
-    ArrayList<Point> fittsTargets= new ArrayList<Point>();
+    ArrayList<Point> list_hTargets= new ArrayList<Point>();
+    ArrayList<Point> list_vTargets= new ArrayList<Point>();
 
     private DataLogger dLogger;
     private DataLogger dLogger_result;
@@ -108,8 +109,10 @@ public class MainActivity extends AppCompatActivity {
     private State state = State.INIT;
     private boolean isOnTarget = false;
 
-    ArrayList<Integer> list_targetDistance =  new ArrayList<Integer>(Arrays.asList(14, 28, 42, 56, 70));
-    ArrayList<Integer> list_targetSize =  new ArrayList<Integer>(Arrays.asList(4, 8, 12, 16, 20));
+    ArrayList<Integer> list_htargetDistance =  new ArrayList<Integer>(Arrays.asList(0, 28, 56));
+    ArrayList<Integer> list_htargetSize =  new ArrayList<Integer>(Arrays.asList(12));
+    ArrayList<Integer> list_vtargetDistance =  new ArrayList<Integer>(Arrays.asList(0, 25, 50));
+    ArrayList<Integer> list_vtargetSize =  new ArrayList<Integer>(Arrays.asList(8, 16));
 
     private long startTime = 0;
     private long endTime;
@@ -298,8 +301,9 @@ public class MainActivity extends AppCompatActivity {
             imageview2.setAngleY(0);
             imageview2.setOnTrial(true);
             if (fittsMode) {
-                fittsTarget = fittsTargets.remove(new Random().nextInt(fittsTargets.size()));
-                fittsTarget2 = tempStep2Target;
+                //fittsTarget = list_hTargets.remove(new Random().nextInt(list_hTargets.size()));
+                fittsTarget = list_hTargets.remove(0);
+                fittsTarget2 = list_vTargets.remove(0);
                 imageview2.setFittsTarget(fittsTarget);
                 imageview2.setFittsTarget2(fittsTarget2);
             }
@@ -452,16 +456,26 @@ public class MainActivity extends AppCompatActivity {
                                 state = State.TRIAL_BREAK;
 
                                 if (fittsMode) {
-                                    fittsTargets = new ArrayList<Point>();
-                                    for (int size : list_targetSize) {
-                                        for (int distance : list_targetDistance) {
+                                    list_hTargets = new ArrayList<Point>();
+                                    for (int size : list_htargetSize) {
+                                        for (int distance : list_htargetDistance) {
                                             for (int i = 0; i < numRepeat ; i++) {
-                                                fittsTargets.add(new Point(640 + distance * (1280 / 160), size * (1280 / 160)));
-                                                fittsTargets.add(new Point(640 - distance * (1280 / 160), size * (1280 / 160)));
+                                                list_hTargets.add(new Point(640 + distance * (1280 / 160), size * (1280 / 160)));
+                                                list_hTargets.add(new Point(640 - distance * (1280 / 160), size * (1280 / 160)));
                                             }
                                         }
                                     }
-                                    numTrial = fittsTargets.size();
+
+                                    list_vTargets = new ArrayList<Point>();
+                                    for (int i = 0; i < numRepeat / 2 ; i++){
+                                        for (int size : list_vtargetSize){
+                                            for (int distance : list_vtargetDistance) {
+                                                list_vTargets.add(new Point(360 - distance * (720 / maxAngleY / 2), size * (720 / maxAngleY / 2)));
+                                                list_vTargets.add(new Point(360 + distance * (720 / maxAngleY / 2), size * (720 / maxAngleY / 2)));
+                                            }
+                                        }
+                                    }
+                                    numTrial = list_hTargets.size();
                                 } else {
                                     targets = new ArrayList<Point>();
                                     for (int num: numTargets) {
