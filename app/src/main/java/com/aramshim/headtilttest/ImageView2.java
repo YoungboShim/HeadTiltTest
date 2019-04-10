@@ -206,8 +206,8 @@ public class ImageView2 extends View {
                 fittsCursorRect = new Rect(fittsTargetDistance - fittsTargetLength / 2, centerPoint.y + (int)(angleY  / maxAngleY * (step2Height / 2)) - 1,
                         fittsTargetDistance + fittsTargetLength / 2, centerPoint.y + (int)(angleY  / maxAngleY * (step2Height / 2)) + 1);
             }
-            canvas.drawRect(fittsCursorRect,fittsCursorPaint);
-            //canvas.drawCircle(centerPoint.x + (int)(angleX  / maxAngleX * (menuWidth / 2)), centerPoint.y  + (int)(angleY / maxAngleY * (menuHeight / 2)), 5, cursorPaint);
+            //canvas.drawRect(fittsCursorRect,fittsCursorPaint);
+            canvas.drawCircle(centerPoint.x + (int)(angleX  / maxAngleX * (menuWidth / 2)), centerPoint.y + (int)(angleY  / maxAngleY * (step2Height / 2)), 5, cursorPaint);
             invalidate();
         }
 

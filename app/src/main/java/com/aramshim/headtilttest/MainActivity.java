@@ -111,9 +111,9 @@ public class MainActivity extends AppCompatActivity {
     private boolean isOnTarget = false;
 
     ArrayList<Integer> list_htargetDistance =  new ArrayList<Integer>(Arrays.asList(28));
-    ArrayList<Integer> list_htargetSize =  new ArrayList<Integer>(Arrays.asList(12));
+    ArrayList<Integer> list_htargetSize =  new ArrayList<Integer>(Arrays.asList(10));
     ArrayList<Integer> list_vtargetDistance =  new ArrayList<Integer>(Arrays.asList(20, 40));
-    ArrayList<Integer> list_vtargetSize =  new ArrayList<Integer>(Arrays.asList(8, 12));
+    ArrayList<Integer> list_vtargetSize =  new ArrayList<Integer>(Arrays.asList(5, 10));
 
     private long startTime = 0;
     private long endTime;
@@ -168,7 +168,7 @@ public class MainActivity extends AppCompatActivity {
 
             if(state == State.TRIAL) {
                 endTime = System.currentTimeMillis();
-                if (endTime - startTime >= 10000)
+                if (endTime - startTime >= 1000000)
                 {
                     confirmTask.cancel();
                     mTextTarget.setText("Failed");
@@ -199,12 +199,11 @@ public class MainActivity extends AppCompatActivity {
                             isOnTarget = checkOnTarget(centerPoint.x + (int) (yaw  / maxAngleX * (menuWidth / 2)));
                             if (isOnTarget == false && previousIsOnTarget == true)
                                 numCross++;
-                            else if (isOnTarget == true && previousIsOnTarget == false)
-                                degOnEntry = pitch;
                             imageview2.setIsonTarget(isOnTarget);
-                            if (isOnTarget == true && Math.abs(pitch - degOnEntry) > 10)
+                            if (isOnTarget == true && Math.abs(pitch) > 10)
                             {
-                                degOnEntry = 0;
+                                degOnEntry = (fittsTarget.x - 640.0) / (1280.0 / maxAngleX / 2);
+                                Log.d(TAG, "updateReceivedData: degOnEntry " + Double.toString(degOnEntry));
                                 isOnTarget = false;
                                 step = 2;
                                 imageview2.setStep(2);
@@ -214,11 +213,10 @@ public class MainActivity extends AppCompatActivity {
                                 isOnTarget = checkOnTarget2(centerPoint.y + (int) (pitch / maxAngleY * (720 / 2)));
                                 if (isOnTarget == false && previousIsOnTarget == true)
                                     numCross++;
-                                else if (isOnTarget == true && previousIsOnTarget == false)
-                                    degOnEntry = yaw;
 
                                 imageview2.setIsonTarget(isOnTarget);
-                                if (isOnTarget == true && Math.abs(yaw - degOnEntry) > 10)
+                                Log.d(TAG, "updateReceivedData: yaw" + Double.toString(yaw));
+                                if (isOnTarget == true && Math.abs(yaw - degOnEntry) > 5)
                                 {
                                     trialDone();
                                 }
@@ -481,8 +479,8 @@ public class MainActivity extends AppCompatActivity {
                                     for (int size : list_htargetSize) {
                                         for (int distance : list_htargetDistance) {
                                             for (int i = 0; i < list_vtargetSize.size() * list_vtargetDistance.size() ; i++) {
-                                                list_hTargets.add(new Point(640 + distance * (1280 / 160), size * (1280 / 160)));
-                                                list_hTargets.add(new Point(640 - distance * (1280 / 160), size * (1280 / 160)));
+                                                list_hTargets.add(new Point(640 + distance * (1280 / maxAngleX / 2), size * (1280 / maxAngleX / 2)));
+                                                list_hTargets.add(new Point(640 - distance * (1280 / maxAngleX / 2), size * (1280 / maxAngleX / 2)));
                                             }
                                         }
                                     }
