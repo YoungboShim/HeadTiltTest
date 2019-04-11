@@ -200,7 +200,7 @@ public class MainActivity extends AppCompatActivity {
                         if (step == 1)
                         {
                             //isOnTarget = checkOnTarget(centerPoint.x + (int) (yaw * (1280 / maxAngleX / 2)));
-                            isOnTarget = checkOnTargetMod(yaw, pitch, X2ang(fittsTarget.x - screenWidth / 2), 0, X2ang(fittsTarget.y), vBoundHeight);
+                            isOnTarget = checkOnTargetMod(yaw, pitch, X2ang(fittsTarget.x - screenWidth / 2.0), 0, X2ang(fittsTarget.y), vBoundHeight);
                             Log.d(TAG, "updateReceivedData: isOnTarget " + Double.toString(yaw) + ", " + Double.toString(pitch) + ", " + Double.toString(X2ang(fittsTarget.x)) + ", " + Double.toString(0) + ", " + Double.toString(X2ang(fittsTarget.y)) + ", " + Double.toString(vBoundHeight));
                             if (isOnTarget == false && previousIsOnTarget == true)
                                 numCross++;
@@ -214,7 +214,7 @@ public class MainActivity extends AppCompatActivity {
                             }
                         } else if (step == 2) {
                             if(orthMode){
-                                isOnTarget = checkOnTargetMod(yaw, pitch, X2ang(fittsTarget.x - screenWidth / 2), Y2ang(fittsTarget2.x - screenHeight / 2), hBoundWidth, Y2ang(fittsTarget2.y));
+                                isOnTarget = checkOnTargetMod(yaw, pitch, X2ang(fittsTarget.x - screenWidth / 2.0), Y2ang(fittsTarget2.x - screenHeight / 2.0), hBoundWidth, Y2ang(fittsTarget2.y));
                                 //isOnTarget = checkOnTarget2(centerPoint.y + (int) (pitch * (720 / maxAngleY / 2)));
                                 if (isOnTarget == false && previousIsOnTarget == true)
                                     numCross++;
@@ -472,7 +472,7 @@ public class MainActivity extends AppCompatActivity {
                                     for (int size : list_htargetSize) {
                                         for (int distance : list_htargetDistance) {
                                             for (int i = 0; i < list_vtargetSize.size() * list_vtargetDistance.size() ; i++) {
-                                                list_hTargets.add(new Point(640 + distance * (1280 / maxAngleX / 2), size * (1280 / maxAngleX / 2)));
+                                                list_hTargets.add(new Point((int)(640 + distance * (1280.0 / maxAngleX / 2)), (int)(size * (1280.0 / maxAngleX / 2))));
                                                 // list_hTargets.add(new Point(640 - distance * (1280 / maxAngleX / 2), size * (1280 / maxAngleX / 2)));
                                             }
                                         }
@@ -482,7 +482,7 @@ public class MainActivity extends AppCompatActivity {
                                     for (int i = 0; i < list_htargetSize.size() * list_htargetDistance.size(); i++) {
                                         for (int size : list_vtargetSize) {
                                             for (int distance : list_vtargetDistance) {
-                                                list_vTargets.add(new Point(360 - distance * (720 / maxAngleY / 2), size * (720 / maxAngleY / 2)));
+                                                list_vTargets.add(new Point((int)(360 - distance * (720.0 / maxAngleY / 2)), (int)(size * (720.0 / maxAngleY / 2))));
                                                 // list_vTargets.add(new Point(360 + distance * (720 / maxAngleY / 2), size * (720 / maxAngleY / 2)));
                                             }
                                         }
