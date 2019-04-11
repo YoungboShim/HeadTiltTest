@@ -167,7 +167,11 @@ public class ImageView2 extends View {
                             canvas.drawRect(fittsTargetRect, fittsTargetPaint);
                         else
                             canvas.drawRect(fittsTargetRect, selectedMenuPaint2);
-                        canvas.drawRect(fittsTarget2Rect, menuPaint);
+                        //canvas.drawRect(fittsTarget2Rect, menuPaint);
+                        if (fittsTarget2Rect.top > centerPoint.y)
+                            canvas.drawCircle(fittsTargetDistance, centerPoint.y + 100, 10, menuPaint);
+                        else
+                            canvas.drawCircle(fittsTargetDistance, centerPoint.y - 100, 10, menuPaint);
                     } // else
                         // canvas.drawRect(fittsTargetRect, selectedMenuPaint2);
 

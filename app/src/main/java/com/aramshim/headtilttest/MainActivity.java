@@ -60,13 +60,13 @@ public class MainActivity extends AppCompatActivity {
 
     private final ExecutorService mExecutor = Executors.newSingleThreadExecutor();
 
-    int maxAngleX = 55;
-    int maxAngleY = 60;
-    int screenWidth = 1280;
-    int screenHeight = 720;
-    Point centerPoint = new Point(screenWidth / 2, screenHeight / 2);
-    int menuWidth = screenWidth;
-    int menuHeight = 150;
+    double maxAngleX = 62;
+    double maxAngleY = 60;
+    double screenWidth = 1280;
+    double screenHeight = 720;
+    double[] centerPoint = {screenWidth / 2, screenHeight / 2};
+    double menuWidth = screenWidth;
+    double menuHeight = 150;
     int menuNum = 1;
     int selectedX = 0;
     int selectedY = 0;
@@ -76,8 +76,8 @@ public class MainActivity extends AppCompatActivity {
     int step = 1;
 
     int target;
-    Point fittsTarget;
-    Point fittsTarget2;
+    double[] fittsTarget = new double[2];
+    double[] fittsTarget2 = new double[2];
 
     int numBlock = 3;
     int numRepeat = 12;
@@ -88,8 +88,8 @@ public class MainActivity extends AppCompatActivity {
     int cntTrial = 0;
     int numTrial = 0;
 
-    ArrayList<Point> list_hTargets= new ArrayList<Point>();
-    ArrayList<Point> list_vTargets= new ArrayList<Point>();
+    ArrayList<double[]> list_hTargets= new ArrayList<double[]>();
+    ArrayList<double[]> list_vTargets= new ArrayList<double[]>();
 
     private DataLogger dLogger;
     private DataLogger dLogger_result;
@@ -110,10 +110,13 @@ public class MainActivity extends AppCompatActivity {
     private State state = State.INIT;
     private boolean isOnTarget = false;
 
-    ArrayList<Integer> list_htargetDistance =  new ArrayList<Integer>(Arrays.asList(28));
-    ArrayList<Integer> list_htargetSize =  new ArrayList<Integer>(Arrays.asList(10));
-    ArrayList<Integer> list_vtargetDistance =  new ArrayList<Integer>(Arrays.asList(20, 40));
-    ArrayList<Integer> list_vtargetSize =  new ArrayList<Integer>(Arrays.asList(5, 10));
+    ArrayList<Double> list_htargetDistance =  new ArrayList<Double>(Arrays.asList(0.0, 0.0, 28.0, -28.0, 56.0, -56.0));
+    ArrayList<Double> list_htargetSize =  new ArrayList<Double>(Arrays.asList(12.0));
+    ArrayList<Double> list_vtargetDistance =  new ArrayList<Double>(Arrays.asList(20.0, -20.0, 40.0, -40.0));
+    ArrayList<Double> list_vtargetSize =  new ArrayList<Double>(Arrays.asList(4.0, 8.0, 12.0));
+
+    private double vBoundHeight = 20;
+    private double hBoundWidth = 12;
 
     private long startTime = 0;
     private long endTime;
@@ -168,15 +171,15 @@ public class MainActivity extends AppCompatActivity {
 
             if(state == State.TRIAL) {
                 endTime = System.currentTimeMillis();
-                if (endTime - startTime >= 1000000)
+                if (endTime - startTime >= 15000)
                 {
                     confirmTask.cancel();
                     mTextTarget.setText("Failed");
-                    endTime = startTime + 10000;
+                    endTime = startTime + 15000;
                     try {
                         //dLogger.trace_write(strData);
                         if (fittsMode)
-                            dLogger.just_write(currentBlock + "," + cntTrial + "," + (fittsTarget.x-640)/8 + "," + fittsTarget.y/8 + "," + (endTime - startTime) + ","+ strData);
+                            dLogger.just_write(currentBlock + "," + cntTrial + "," + (fittsTarget[0]-640)/8 + "," + fittsTarget[1]/8 + "," + (endTime - startTime) + ","+ strData);
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -196,33 +199,33 @@ public class MainActivity extends AppCompatActivity {
                     if (twoStepMode) {
                         if (step == 1)
                         {
-                            isOnTarget = checkOnTarget(centerPoint.x + (int) (yaw  / maxAngleX * (menuWidth / 2)));
+                            //isOnTarget = checkOnTarget(centerPoint.x + (int) (yaw * (1280 / maxAngleX / 2)));
+                            isOnTarget = checkOnTargetMod(yaw, pitch, X2ang(fittsTarget[0] - screenWidth / 2.0), 0, X2ang(fittsTarget[1]), vBoundHeight);
                             if (isOnTarget == false && previousIsOnTarget == true)
                                 numCross++;
                             imageview2.setIsonTarget(isOnTarget);
-                            if (isOnTarget == true && Math.abs(pitch) > 10)
+                            if (previousIsOnTarget == true && Math.abs(pitch) > vBoundHeight / 2)
                             {
-                                degOnEntry = (fittsTarget.x - 640.0) / (1280.0 / maxAngleX / 2);
-                                Log.d(TAG, "updateReceivedData: degOnEntry " + Double.toString(degOnEntry));
+                                degOnEntry = X2ang(fittsTarget[0] - screenWidth / 2);
                                 isOnTarget = false;
                                 step = 2;
                                 imageview2.setStep(2);
                             }
                         } else if (step == 2) {
                             if(orthMode){
-                                isOnTarget = checkOnTarget2(centerPoint.y + (int) (pitch / maxAngleY * (720 / 2)));
+                                isOnTarget = checkOnTargetMod(yaw, pitch, X2ang(fittsTarget[0] - screenWidth / 2.0), Y2ang(fittsTarget2[0] - screenHeight / 2.0), hBoundWidth, Y2ang(fittsTarget2[1]));
+                                //isOnTarget = checkOnTarget2(centerPoint.y + (int) (pitch * (720 / maxAngleY / 2)));
                                 if (isOnTarget == false && previousIsOnTarget == true)
                                     numCross++;
 
                                 imageview2.setIsonTarget(isOnTarget);
-                                Log.d(TAG, "updateReceivedData: yaw" + Double.toString(yaw));
-                                if (isOnTarget == true && Math.abs(yaw - degOnEntry) > 5)
+                                if (previousIsOnTarget == true && Math.abs(yaw - degOnEntry) > hBoundWidth / 2)
                                 {
                                     trialDone();
                                 }
                             }
                             else {
-                                isOnTarget = checkOnTarget2(centerPoint.y + (int) (pitch / maxAngleY * (720 / 2)));
+                                isOnTarget = checkOnTarget2((int)centerPoint[1] + (int) (pitch / maxAngleY * (720 / 2)));
                                 imageview2.setIsonTarget(isOnTarget);
                                 if (!isOnTarget) {
                                     confirmTask.cancel();
@@ -273,7 +276,7 @@ public class MainActivity extends AppCompatActivity {
                 try {
                     //dLogger.trace_write(strData);
                     if (fittsMode)
-                        dLogger.just_write(currentBlock + "," + cntTrial + "," + (fittsTarget.x-640)/8 + "," + fittsTarget.y/8 + "," + (endTime - startTime) + ","+ strData);
+                        dLogger.just_write(currentBlock + "," + cntTrial + "," + (fittsTarget[0]-640)/8 + "," + fittsTarget[1]/8 + "," + (endTime - startTime) + ","+ strData);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -309,6 +312,7 @@ public class MainActivity extends AppCompatActivity {
     class CustomTimer extends TimerTask{
         @Override
         public void run() {
+            int targetIdx;
             cntTrial += 1;
             numCross = 0;
             comfortLevel = -1;
@@ -320,11 +324,11 @@ public class MainActivity extends AppCompatActivity {
             imageview2.setAngleY(0);
             imageview2.setOnTrial(true);
             if (fittsMode) {
-                //fittsTarget = list_hTargets.remove(new Random().nextInt(list_hTargets.size()));
-                fittsTarget = list_hTargets.remove(0);
-                fittsTarget2 = list_vTargets.remove(0);
-                imageview2.setFittsTarget(fittsTarget);
-                imageview2.setFittsTarget2(fittsTarget2);
+                targetIdx = new Random().nextInt(list_hTargets.size());
+                fittsTarget = list_hTargets.remove(targetIdx);
+                fittsTarget2 = list_vTargets.remove(targetIdx);
+                imageview2.setFittsTarget(new Point((int)fittsTarget[0], (int)fittsTarget[1]));
+                imageview2.setFittsTarget2(new Point((int)fittsTarget2[0], (int)fittsTarget2[1]));
             }
             else {
                 Point tempTarget = targets.remove(new Random().nextInt(targets.size()));
@@ -401,23 +405,11 @@ public class MainActivity extends AppCompatActivity {
 
                                 if (seatMode == true)
                                 {
-                                    if (dwellMode == true)
-                                    {
-                                        dLogger.start(logID+"sit_dwell_trace");
-                                        dLogger_result.start(logID+"sit_dwell_result");
-                                    } else {
-                                        dLogger.start(logID+"sit_nod_trace");
-                                        dLogger_result.start(logID+"sit_nod_result");
-                                    }
+                                    dLogger.start("exp2_" + logID + "_sit_trace");
+                                    dLogger_result.start("exp2_" + logID+"_sit_result");
                                 } else {
-                                    if (dwellMode == true)
-                                    {
-                                        dLogger.start(logID+"walk_dwell_trace");
-                                        dLogger_result.start(logID+"walk_dwell_result");
-                                    } else {
-                                        dLogger.start(logID+"walk_nod_trace");
-                                        dLogger_result.start(logID+"walk_nod_result");
-                                    }
+                                    dLogger.start("exp2_" + logID + "_walk_trace");
+                                    dLogger_result.start("exp2_" + logID+"_walk_result");
                                 }
                                 dLogger.just_write("Block, Trial, Angle, Size, Time,ID,Roll,Pitch,Yaw,DistX,DistY,DistZ,Battery\n");
                                 dLogger_result.just_write("Block, Trial, Angle, Size, Condition, Gesture, Response time, Cross, Comfort, Error\n");
@@ -431,8 +423,8 @@ public class MainActivity extends AppCompatActivity {
                             if (cntTrial > 0) {
                                 try {
                                     if (fittsMode){
-                                    dLogger_result.just_write(currentBlock + "," + cntTrial + "," + (fittsTarget.x-640)/8 + "," + fittsTarget.y/8
-                                            + "," + seatMode + "," + dwellMode + "," + (endTime - startTime)  + "," +  numCross  + "," + comfortLevel + "," + (endPoint - (fittsTarget.x-640)/8)+"\n");}
+                                    dLogger_result.just_write(currentBlock + "," + cntTrial + "," + (fittsTarget[0]-640)/8 + "," + fittsTarget[1]/8
+                                            + "," + seatMode + "," + dwellMode + "," + (endTime - startTime)  + "," +  numCross  + "," + comfortLevel + "," + (endPoint - (fittsTarget[0]-640)/8)+"\n");}
                                 } catch (IOException e) {
                                     e.printStackTrace();
                                 }
@@ -475,21 +467,23 @@ public class MainActivity extends AppCompatActivity {
                                 state = State.TRIAL_BREAK;
 
                                 if (fittsMode) {
-                                    list_hTargets = new ArrayList<Point>();
-                                    for (int size : list_htargetSize) {
-                                        for (int distance : list_htargetDistance) {
+                                    list_hTargets = new ArrayList<double[]>();
+                                    for (double size : list_htargetSize) {
+                                        for (double distance : list_htargetDistance) {
                                             for (int i = 0; i < list_vtargetSize.size() * list_vtargetDistance.size() ; i++) {
-                                                list_hTargets.add(new Point(640 + distance * (1280 / maxAngleX / 2), size * (1280 / maxAngleX / 2)));
-                                                list_hTargets.add(new Point(640 - distance * (1280 / maxAngleX / 2), size * (1280 / maxAngleX / 2)));
+                                                list_hTargets.add(new double[]{640 + distance * (1280.0 / maxAngleX / 2), size * (1280.0 / maxAngleX / 2)});
+                                                // list_hTargets.add(new Point(640 - distance * (1280 / maxAngleX / 2), size * (1280 / maxAngleX / 2)));
                                             }
                                         }
                                     }
 
-                                    list_vTargets = new ArrayList<Point>();
-                                    for (int size : list_vtargetSize){
-                                        for (int distance : list_vtargetDistance) {
-                                            list_vTargets.add(new Point(360 - distance * (720 / maxAngleY / 2), size * (720 / maxAngleY / 2)));
-                                            list_vTargets.add(new Point(360 + distance * (720 / maxAngleY / 2), size * (720 / maxAngleY / 2)));
+                                    list_vTargets = new ArrayList<double[]>();
+                                    for (int i = 0; i < list_htargetSize.size() * list_htargetDistance.size(); i++) {
+                                        for (double size : list_vtargetSize) {
+                                            for (double distance : list_vtargetDistance) {
+                                                list_vTargets.add(new double[]{360 - distance * (720.0 / maxAngleY / 2), size * (720.0 / maxAngleY / 2)});
+                                                // list_vTargets.add(new Point(360 + distance * (720 / maxAngleY / 2), size * (720 / maxAngleY / 2)));
+                                            }
                                         }
                                     }
                                     numTrial = list_hTargets.size();
@@ -579,11 +573,12 @@ public class MainActivity extends AppCompatActivity {
         mBTCheck = (TextView) findViewById(R.id.textViewBTCheck);
         mSensorCheck = (TextView) findViewById(R.id.textViewSensorCheck);
         imageview2 = (ImageView2)findViewById(R.id.graphicView);
-        imageview2.setCenterPoint(centerPoint);
-        imageview2.setMenuSize(menuWidth,menuHeight);
+        imageview2.setCenterPoint(new Point((int)centerPoint[0], (int) centerPoint[1]));
+        menuHeight = (int)ang2Y(vBoundHeight);
+        imageview2.setMenuSize((int)menuWidth, (int)menuHeight);
         imageview2.setMenuNum(menuNum);
-        imageview2.setMaxAngleX(maxAngleX);
-        imageview2.setMaxAngleY(maxAngleY);
+        imageview2.setMaxAngleX((int)maxAngleX);
+        imageview2.setMaxAngleY((int)maxAngleY);
         imageview2.setSelectedPosition(selectedX,selectedY);
         mMaxAngleX.setText(maxAngleX+"");
         mMaxAngleY.setText(maxAngleY+"");
@@ -639,7 +634,7 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 maxAngleX = maxAngleX + 5;
                 if (maxAngleX > 90) maxAngleX = 90;
-                imageview2.setMaxAngleX(maxAngleX);
+                imageview2.setMaxAngleX((int)maxAngleX);
                 mMaxAngleX.setText(maxAngleX+"");
             }
         });
@@ -652,7 +647,7 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 maxAngleX = maxAngleX - 5;
                 if (maxAngleX < 10) maxAngleX = 10;
-                imageview2.setMaxAngleX(maxAngleX);
+                imageview2.setMaxAngleX((int)maxAngleX);
                 mMaxAngleX.setText(maxAngleX+"");
             }
         });
@@ -664,7 +659,7 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 maxAngleY = maxAngleY + 5;
                 if (maxAngleY > 90) maxAngleY = 90;
-                imageview2.setMaxAngleY(maxAngleY);
+                imageview2.setMaxAngleY((int)maxAngleY);
                 mMaxAngleY.setText(maxAngleY+"");
             }
         });
@@ -676,7 +671,7 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 maxAngleY = maxAngleY - 5;
                 if (maxAngleY < 10) maxAngleY = 10;
-                imageview2.setMaxAngleY(maxAngleY);
+                imageview2.setMaxAngleY((int)maxAngleY);
                 mMaxAngleY.setText(maxAngleY+"");
             }
         });
@@ -808,7 +803,7 @@ public class MainActivity extends AppCompatActivity {
 
     private boolean checkOnTarget(int x)
     {
-        if (fittsTarget.x - fittsTarget.y / 2  <= x && x <= fittsTarget.x + fittsTarget.y / 2)
+        if (fittsTarget[0] - fittsTarget[1] / 2  <= x && x <= fittsTarget[0] + fittsTarget[1] / 2)
         {
             return true;
         } else {
@@ -816,14 +811,37 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private boolean checkOnTargetMod(double cursorX, double cursorY, double targetX, double targetY, double targetWidth, double targetHeight){
+        if(targetX - targetWidth / 2  <= cursorX && cursorX <= targetX + targetWidth / 2 && targetY - targetHeight / 2 <= cursorY && cursorY <= targetY + targetHeight / 2)
+            return true;
+        else
+            return false;
+    }
+
     private boolean checkOnTarget2(int y)
     {
-        if (fittsTarget2.x - fittsTarget2.y / 2  <= y && y <= fittsTarget2.x + fittsTarget2.y / 2)
+        if (fittsTarget2[0] - fittsTarget2[1] / 2  <= y && y <= fittsTarget2[0] + fittsTarget2[1] / 2)
         {
             return true;
         } else {
             return false;
         }
+    }
+
+    private double ang2X(double angle){
+        return angle * (screenWidth / maxAngleX / 2);
+    }
+
+    private double ang2Y(double angle){
+        return angle * (screenHeight / maxAngleY/ 2);
+    }
+
+    private double X2ang(double xPos){
+        return xPos / (screenWidth / maxAngleX / 2);
+    }
+
+    private double Y2ang(double yPos){
+        return yPos / (screenHeight / maxAngleY/ 2);
     }
 
     private void stopIoManager() {
