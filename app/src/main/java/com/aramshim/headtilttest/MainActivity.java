@@ -61,7 +61,7 @@ public class MainActivity extends AppCompatActivity {
     private final ExecutorService mExecutor = Executors.newSingleThreadExecutor();
 
     double maxAngleX = 62;
-    double maxAngleY = 60;
+    double maxAngleY = 46;
     double screenWidth = 1280;
     double screenHeight = 720;
     double[] centerPoint = {screenWidth / 2, screenHeight / 2};
@@ -109,25 +109,40 @@ public class MainActivity extends AppCompatActivity {
 
     private State state = State.INIT;
     private boolean isOnTarget = false;
+    private boolean isOnLine = false;
 
     ArrayList<Double> list_htargetDistance =  new ArrayList<Double>(Arrays.asList(0.0, 0.0, 28.0, -28.0, 56.0, -56.0));
     ArrayList<Double> list_htargetSize =  new ArrayList<Double>(Arrays.asList(12.0));
     ArrayList<Double> list_vtargetDistance =  new ArrayList<Double>(Arrays.asList(20.0, -20.0, 40.0, -40.0));
     ArrayList<Double> list_vtargetSize =  new ArrayList<Double>(Arrays.asList(4.0, 8.0, 12.0));
-
+/*
+    ArrayList<Double> list_htargetDistance =  new ArrayList<Double>(Arrays.asList(0.0, 28.0, -56.0));
+    ArrayList<Double> list_htargetSize =  new ArrayList<Double>(Arrays.asList(12.0));
+    ArrayList<Double> list_vtargetDistance =  new ArrayList<Double>(Arrays.asList(20.0, -40.0));
+    ArrayList<Double> list_vtargetSize =  new ArrayList<Double>(Arrays.asList(8.0, 12.0));
+*/
     private double vBoundHeight = 20;
     private double hBoundWidth = 12;
 
     private long startTime = 0;
     private long endTime;
+    private long endTime1;
     private int numCross;
+    private int numCross1_ortho;
+    private int numCross2_ortho;
+    private int numCross1_target;
+    private int numCross2_target;
     private boolean previousIsOnTarget;
+    private boolean previousIsOnLine;
     private int currentBlock = 0;
     private int comfortLevel = -1;
     private double endPoint;
+    private double endPoint1;
+    private double endPoint2;
     private int currentCondition = 0;
     private Timer mTimer;
     private double degOnEntry = 0;
+    private boolean isWait = false;
 
     Point tempStep2Target = new Point(360 - 30 * 8, 15 * 8);
 
@@ -162,7 +177,7 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
         }
 
-        if(strData.split(",")[0].equals("100-1")) {
+        if(strData.split(",")[0].equals("100-0") || strData.split(",")[0].equals("100-1")) {
             headYaw = Double.parseDouble(strData.split(",")[3]);
             headPitch = Double.parseDouble(strData.split(",")[1]);
             double yaw = getYaw(headYaw - initYaw);
@@ -171,19 +186,26 @@ public class MainActivity extends AppCompatActivity {
 
             if(state == State.TRIAL) {
                 endTime = System.currentTimeMillis();
+                if (twoStepMode == true) {
+                    if (step == 1)
+                        endTime1 = System.currentTimeMillis();
+                }
                 if (endTime - startTime >= 15000)
                 {
                     confirmTask.cancel();
-                    mTextTarget.setText("Failed");
                     endTime = startTime + 15000;
+                    if (endTime1 > endTime)
+                        endTime1 = endTime;
                     try {
                         //dLogger.trace_write(strData);
                         if (fittsMode)
-                            dLogger.just_write(currentBlock + "," + cntTrial + "," + (fittsTarget[0]-640)/8 + "," + fittsTarget[1]/8 + "," + (endTime - startTime) + ","+ strData);
+                            dLogger.just_write(currentBlock + "," + cntTrial + "," + Math.round(X2ang(fittsTarget[0] - screenWidth / 2.0)) + "," + Math.round(X2ang(fittsTarget[1])) + ","
+                                    + Math.round(Y2ang(fittsTarget2[0] - screenHeight / 2.0)) + "," + Math.round(Y2ang(fittsTarget2[1])) + "," + (endTime - startTime) + ","+ strData);
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
                     trialDone();
+                    mTextTarget.setText("Time Out\nPlease look ahead");
                     mTextTarget.setVisibility(View.VISIBLE);
                     return;
                 }
@@ -191,11 +213,19 @@ public class MainActivity extends AppCompatActivity {
                 mTextTarget.setVisibility(View.INVISIBLE);
                 imageview2.setAngleX(yaw);
                 imageview2.setAngleY(pitch);
-                endPoint = yaw;
+                if (twoStepMode) {
+                    if (step == 1)
+                        endPoint1 = yaw;
+                    else if (step == 2)
+                        endPoint2 = pitch;
+                } else {
+                    endPoint = yaw;
+                }
+
 
                 if (fittsMode) {
                     previousIsOnTarget = isOnTarget;
-
+                    previousIsOnLine = isOnLine;
                     if (twoStepMode) {
                         if (step == 1)
                         {
@@ -204,6 +234,11 @@ public class MainActivity extends AppCompatActivity {
                             if (isOnTarget == false && previousIsOnTarget == true)
                                 numCross++;
                             imageview2.setIsonTarget(isOnTarget);
+                            isOnLine = checkOnTargetMod(yaw, pitch, X2ang(fittsTarget[0] - screenWidth / 2.0), 0, screenWidth, vBoundHeight);
+                            if (previousIsOnTarget == false && isOnLine == false && previousIsOnLine == true)
+                                numCross1_ortho++;
+                            if (isOnLine == true && isOnTarget == false && previousIsOnTarget == true)
+                                numCross1_target++;
                             if (previousIsOnTarget == true && Math.abs(pitch) > vBoundHeight / 2)
                             {
                                 degOnEntry = X2ang(fittsTarget[0] - screenWidth / 2);
@@ -217,8 +252,14 @@ public class MainActivity extends AppCompatActivity {
                                 //isOnTarget = checkOnTarget2(centerPoint.y + (int) (pitch * (720 / maxAngleY / 2)));
                                 if (isOnTarget == false && previousIsOnTarget == true)
                                     numCross++;
-
                                 imageview2.setIsonTarget(isOnTarget);
+
+                                isOnLine = checkOnTargetMod(yaw, pitch, X2ang(fittsTarget[0] - screenWidth / 2.0), 0, hBoundWidth, screenHeight);
+                                if (previousIsOnTarget == false && isOnLine == false && previousIsOnLine == true)
+                                    numCross2_ortho++;
+                                if (isOnLine == true && isOnTarget == false && previousIsOnTarget == true)
+                                    numCross2_target++;
+
                                 if (previousIsOnTarget == true && Math.abs(yaw - degOnEntry) > hBoundWidth / 2)
                                 {
                                     trialDone();
@@ -276,7 +317,8 @@ public class MainActivity extends AppCompatActivity {
                 try {
                     //dLogger.trace_write(strData);
                     if (fittsMode)
-                        dLogger.just_write(currentBlock + "," + cntTrial + "," + (fittsTarget[0]-640)/8 + "," + fittsTarget[1]/8 + "," + (endTime - startTime) + ","+ strData);
+                        dLogger.just_write(currentBlock + "," + cntTrial + "," + Math.round(X2ang(fittsTarget[0] - screenWidth / 2.0)) + "," + Math.round(X2ang(fittsTarget[1])) + ","
+                                + Math.round(Y2ang(fittsTarget2[0] - screenHeight / 2.0)) + "," + Math.round(Y2ang(fittsTarget2[1])) + "," + (endTime - startTime) + ","+ strData);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -289,10 +331,19 @@ public class MainActivity extends AppCompatActivity {
         state  = State.TRIAL_BREAK;
         degOnEntry = 0;
         isOnTarget = false;
+        isOnLine = false;
         mQuestion.setVisibility(View.VISIBLE);
-        mTextTarget.setVisibility(View.INVISIBLE);
+        btnBluetooth.setVisibility(View.VISIBLE);
+        mSensorCheck.setVisibility(View.VISIBLE);
+        //mTextTarget.setVisibility(View.INVISIBLE);
+        mTextTarget.setVisibility(View.VISIBLE);
+        mTextTarget.setText("Please look ahead");
         imageview2.setOnTrial(false);
         imageview2.setIsonTarget(false);
+        imageview2.setIsFail(false);
+        if (endTime == startTime + 15000) {
+            imageview2.setIsFail(true);
+        }
         imageview2.setStep(1);
         step = 1;
         //endTime = System.currentTimeMillis();
@@ -315,6 +366,10 @@ public class MainActivity extends AppCompatActivity {
             int targetIdx;
             cntTrial += 1;
             numCross = 0;
+            numCross1_ortho = 0;
+            numCross2_ortho = 0;
+            numCross1_target = 0;
+            numCross2_target = 0;
             comfortLevel = -1;
             initYaw = headYaw;
             initPitch = headPitch;
@@ -323,6 +378,7 @@ public class MainActivity extends AppCompatActivity {
             imageview2.setAngleX(0);
             imageview2.setAngleY(0);
             imageview2.setOnTrial(true);
+            isWait = false;
             if (fittsMode) {
                 targetIdx = new Random().nextInt(list_hTargets.size());
                 fittsTarget = list_hTargets.remove(targetIdx);
@@ -381,7 +437,8 @@ public class MainActivity extends AppCompatActivity {
                 }
                 else if (strData.trim().split(" ")[0].equals("c"))
                 {
-                    if (true) {
+
+                    if (isWait == false) {
                         if (state == State.INIT) {
                             if (System.currentTimeMillis() - startTime < 10000) {
                                 return;
@@ -411,8 +468,9 @@ public class MainActivity extends AppCompatActivity {
                                     dLogger.start("exp2_" + logID + "_walk_trace");
                                     dLogger_result.start("exp2_" + logID+"_walk_result");
                                 }
-                                dLogger.just_write("Block, Trial, Angle, Size, Time,ID,Roll,Pitch,Yaw,DistX,DistY,DistZ,Battery\n");
-                                dLogger_result.just_write("Block, Trial, Angle, Size, Condition, Gesture, Response time, Cross, Comfort, Error\n");
+                                dLogger.just_write("Block, Trial, Angle1, Size1, Angle2, Size2, Time,ID,Roll,Pitch,Yaw,DistX,DistY,DistZ,Battery\n");
+                                //dLogger_result.just_write("Block, Trial, Angle, Size, Condition, Gesture, Response time, Cross, Comfort, Error\n");
+                                dLogger_result.just_write("Block, Trial, Angle1, Size1, Angle2, Size2, Condition, Time1, Time2, TotalTime, Fail, Cross1_ortho, Cross1_target, Cross2_ortho, Cross2_target, Comfort, Error1, Error2\n");
                             } catch (IOException e) {
                                 e.printStackTrace();
                             }
@@ -422,9 +480,23 @@ public class MainActivity extends AppCompatActivity {
 
                             if (cntTrial > 0) {
                                 try {
+                                    if (endTime - startTime == 15000) {
+                                        dLogger_result.just_write(currentBlock + "," + cntTrial + "," + Math.round(X2ang(fittsTarget[0] - screenWidth / 2.0)) + "," + Math.round(X2ang(fittsTarget[1])) + ","
+                                                + Math.round(Y2ang(fittsTarget2[0] - screenHeight / 2.0)) + "," + Math.round(Y2ang(fittsTarget2[1])) + "," + seatMode + "," + (endTime1 - startTime) + "," + (endTime - endTime1) + "," + (endTime - startTime) + "," + 1 + ","
+                                                + numCross1_ortho + "," + numCross1_target + "," + numCross2_ortho + "," + numCross2_target + "," + comfortLevel + "," + (endPoint1 - X2ang(fittsTarget[0] - screenWidth / 2.0) ) + ","
+                                                + (endPoint2 - Y2ang(fittsTarget2[0] - screenHeight / 2.0)) + "\n");
+                                    } else {
+                                        dLogger_result.just_write(currentBlock + "," + cntTrial + "," + Math.round(X2ang(fittsTarget[0] - screenWidth / 2.0)) + "," + Math.round(X2ang(fittsTarget[1])) + ","
+                                                + Math.round(Y2ang(fittsTarget2[0] - screenHeight / 2.0)) + "," + Math.round(Y2ang(fittsTarget2[1])) + "," + seatMode + "," + (endTime1 - startTime) + "," + (endTime - endTime1) + "," + (endTime - startTime) + "," + 0 + ","
+                                                + numCross1_ortho + "," + numCross1_target + "," + numCross2_ortho + "," + numCross2_target + "," + comfortLevel + "," + (endPoint1 - X2ang(fittsTarget[0] - screenWidth / 2.0) ) + ","
+                                                + (endPoint2 - Y2ang(fittsTarget2[0] - screenHeight / 2.0)) + "\n");
+                                    }
+
+                                    /*
                                     if (fittsMode){
                                     dLogger_result.just_write(currentBlock + "," + cntTrial + "," + (fittsTarget[0]-640)/8 + "," + fittsTarget[1]/8
                                             + "," + seatMode + "," + dwellMode + "," + (endTime - startTime)  + "," +  numCross  + "," + comfortLevel + "," + (endPoint - (fittsTarget[0]-640)/8)+"\n");}
+                                     */
                                 } catch (IOException e) {
                                     e.printStackTrace();
                                 }
@@ -444,16 +516,18 @@ public class MainActivity extends AppCompatActivity {
 
                             mTimer = new Timer();
                             mTimer.schedule(new CustomTimer(), 1000);
-
+                            //state = State.TRIAL;
                             mTextTarget.setVisibility(View.VISIBLE);
                             mTextTarget.setText("Please look ahead");
                             mSensorCheck.setText((cntTrial + 1) + " / " + numTrial);
                             mQuestion.setText("Question : ");
                             mQuestion.setVisibility(View.INVISIBLE);
-
+                            btnBluetooth.setVisibility(View.INVISIBLE);
+                            mSensorCheck.setVisibility(View.INVISIBLE);
                             imageview2.setFittsTarget(new Point(0,0));
                             imageview2.setFittsTarget2(new Point(0,0));
                             imageview2.setAngleX(0);
+                            isWait = true;
 
                         } else if (state == State.BLOCK_BREAK) {
 

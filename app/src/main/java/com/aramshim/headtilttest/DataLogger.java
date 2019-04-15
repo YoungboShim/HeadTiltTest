@@ -27,6 +27,14 @@ public class DataLogger {
         fileID = logId;
         if(isExternalStorageWritable()) {
             File saveFile = new File(Environment.getExternalStorageDirectory() + File.separator + fileID + ".csv");
+            for (int i = 0; i < 99; i++) {
+                if (saveFile.isFile())
+                {
+                    saveFile = new File(Environment.getExternalStorageDirectory() + File.separator + fileID + "_" + i + ".csv");
+                    continue;
+                }
+                 break;
+            }
             Log.d(TAG, "start: " + saveFile.getPath());
             fWriter = new FileWriter(saveFile, false);
             taskStartTime = System.currentTimeMillis();

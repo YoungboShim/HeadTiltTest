@@ -61,6 +61,7 @@ public class ImageView2 extends View {
     private boolean twoStepMode = true;
 
     private int step2Height = 720;
+    private boolean isFail = false;
 
     public ImageView2(Context paramContext, AttributeSet paramAttributeSet) {
         super(paramContext, paramAttributeSet);
@@ -184,8 +185,14 @@ public class ImageView2 extends View {
                     }
 
                 } else {
-                    canvas.drawRect(fittsTargetRect, confirmedMenuPaint);
-                    canvas.drawRect(fittsTarget2Rect, confirmedMenuPaint);
+                    if (isFail) {
+                        canvas.drawRect(fittsTargetRect, confirmedMenuPaint);
+                        canvas.drawRect(fittsTarget2Rect, confirmedMenuPaint);
+                    } else
+                    {
+                        canvas.drawRect(fittsTargetRect, selectedMenuPaint2);
+                        canvas.drawRect(fittsTarget2Rect, selectedMenuPaint2);
+                    }
                     if (verticalBoundRect != null)
                         canvas.drawRect(verticalBoundRect, menuPaint);
                 }
@@ -287,5 +294,9 @@ public class ImageView2 extends View {
 
     public void setStep(int s) {
         step = s;
+    }
+
+    public void setIsFail(boolean fail) {
+        isFail = fail;
     }
 }
