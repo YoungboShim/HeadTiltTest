@@ -5,11 +5,11 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.AssetManager;
 import android.graphics.Point;
 import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbManager;
 import android.media.AudioManager;
-import android.media.SoundPool;
 import android.os.Build;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -70,8 +70,6 @@ public class MainActivity extends AppCompatActivity {
     int menuNum = 1;
     int selectedX = 0;
     int selectedY = 0;
-    SoundPool sound = new SoundPool(1, AudioManager.STREAM_MUSIC,0);
-    int soundId;
 
     int step = 1;
 
@@ -130,6 +128,13 @@ public class MainActivity extends AppCompatActivity {
     private double degOnEntry = 0;
 
     Point tempStep2Target = new Point(360 - 30 * 8, 15 * 8);
+
+    static AssetManager assetManager;
+    static final int CLIP_NONE = 0;
+    static final int CLIP_HELLO = 1;
+    static final int CLIP_ANDROID = 2;
+    static final int CLIP_SAWTOOTH = 3;
+    static final int CLIP_PLAYBACK = 4;
 
     public enum State {
         INIT, BLOCK_BREAK, TRIAL_BREAK, TRIAL
@@ -345,14 +350,34 @@ public class MainActivity extends AppCompatActivity {
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.activity_main);
 
-        soundId = sound.load(this, R.raw.click, 1);
-
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
         {
             if(checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED){
                 requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE}, 1);
             }
         }
+
+        assetManager = getAssets();
+
+        // initialize native audio system
+        createEngine();
+
+        int sampleRate = 0;
+        int bufSize = 0;
+        /*
+         * retrieve fast audio path sample rate and buf size; if we have it, we pass to native
+         * side to create a player with fast audio enabled [ fast audio == low latency audio ];
+         * IF we do not have a fast audio path, we pass 0 for sampleRate, which will force native
+         * side to pick up the 8Khz sample rate.
+         */
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            AudioManager myAudioMgr = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+            String nativeParam = myAudioMgr.getProperty(AudioManager.PROPERTY_OUTPUT_SAMPLE_RATE);
+            sampleRate = Integer.parseInt(nativeParam);
+            nativeParam = myAudioMgr.getProperty(AudioManager.PROPERTY_OUTPUT_FRAMES_PER_BUFFER);
+            bufSize = Integer.parseInt(nativeParam);
+        }
+        createBufferQueueAudioPlayer(sampleRate, bufSize);
 
         final BluetoothModule btModule = new BluetoothModule(this);
         BluetoothModule.onButtonClickCb callback = new BluetoothModule.onButtonClickCb() {
@@ -601,6 +626,7 @@ public class MainActivity extends AppCompatActivity {
                     dwellMode = true;
                     btnMode.setText("DWELL");
                 }
+                selectClip(CLIP_SAWTOOTH, 1);
             }
         });
 
@@ -790,7 +816,7 @@ public class MainActivity extends AppCompatActivity {
     {
         if (x != selectedX || y != selectedY)
         {
-            int streamId = sound.play(soundId, 1.0F, 1.0F,  1,  0,  1.0F);
+            // TODO: play tick sound using native-audio
             selectedX = x;
             selectedY = y;
             return true;
@@ -893,5 +919,18 @@ public class MainActivity extends AppCompatActivity {
     private void onDeviceStateChange() {
         stopIoManager();
         startIoManager();
+    }
+
+    public static native void createEngine();
+    public static native void createBufferQueueAudioPlayer(int sampleRate, int samplesPerBuf);
+    public static native boolean createAssetAudioPlayer(AssetManager assetManager, String filename);
+    // true == PLAYING, false == PAUSED
+    public static native void setPlayingAssetAudioPlayer(boolean isPlaying);
+    public static native boolean selectClip(int which, int count);
+    public static native void shutdown();
+
+    /** Load jni .so on initialization */
+    static {
+        System.loadLibrary("native-audio-jni");
     }
 }
